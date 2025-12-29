@@ -1,0 +1,10 @@
+.gradle
+build/
+out/
+bin/
+.DS_Store
+.vscode/
+.idea/
+*.ipr
+*.iws
+*.iml" > .gitignore
