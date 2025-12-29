@@ -1,3 +1,6 @@
+plugins {
+    id("java-conventions")
+}
 
 dependencies{
     implementation(project(":base"))

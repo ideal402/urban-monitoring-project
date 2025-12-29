@@ -5,5 +5,29 @@
  * For more detailed information on multi-project builds, please refer to https://docs.gradle.org/9.2.1/userguide/multi_project_builds.html in the Gradle documentation.
  */
 
+// 루트 프로젝트 이름 설정
+// 폴더 이름에 의존하지 않고 빌드 이름을 고정하기 위해 사용
 rootProject.name = "project"
+
+// 플러그인 관리 설정
+// 빌드 스크립트 자체에서 사용할 플러그인의 저장소와 버전을 관리
+pluginManagement{
+    repositories{
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+// 의존성 저장소 중앙 관리
+// 모든 서브 프로젝트가 동일한 저장소를 사용할도록 여기서 한 번만 선언
+dependencyResolutionManagement{
+    //서브 프로젝트가 개별적으로 저장소를 재정의하지 못하게 설정(일관성 및 보안성 강화)
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+    repositories{
+        mavenCentral()
+    }
+}
+
+//서브 프로젝트 설정
 include("web", "base")
