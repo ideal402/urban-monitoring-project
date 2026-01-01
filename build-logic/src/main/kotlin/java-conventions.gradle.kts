@@ -1,12 +1,10 @@
 //프로젝트에 적용할 플러그인 선언
 plugins {
     id("java")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
 }
 
 // 프로젝트 메타데이터
-group = "com.example"
+group = "com.ideal402.urban"
 version = "0.0.1-SNAPSHOT"
 
 // 자바 툴체인 설정
@@ -16,11 +14,13 @@ java {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
+val libs = the<VersionCatalogsExtension>().named("libs")
 
 // 의존성 선언
 dependencies {
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
+    compileOnly(libs.findLibrary("lombok").get())
+    annotationProcessor(libs.findLibrary("lombok").get())
+    testImplementation(libs.findLibrary("spring-boot-starter-test").get())}
 
 // 테스트 테스크 설정
 tasks.withType<Test> {
