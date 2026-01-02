@@ -1,4 +1,4 @@
-package com.ideal402.undan;
+package com.ideal402.urdan;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
