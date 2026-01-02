@@ -4,6 +4,13 @@ springBoot = "3.4.1"
 springDependencyManagement = "1.1.7"
 kotlin = "1.9.25"
 lombok = "1.18.36"  
+openapi = "7.10.0"
+
+swaggerAnnotations = "2.2.20"
+jacksonNullable = "0.2.6"
+jakartaValidation = "3.0.2"     
+jakartaAnnotation = "2.1.1"
+jakartaServlet = "6.0.0"
 
 [libraries]
 # 웹 어플리케이션 및 API
@@ -19,6 +26,16 @@ lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" 
 spring-boot-gradle-plugin = { group = "org.springframework.boot", name = "spring-boot-gradle-plugin", version.ref = "springBoot" }
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
+#openapi/awagger
+swagger-annotations = {group = "io.swagger.core.v3", name = "swagger-annotations", version.ref = "swaggerAnnotations"}
+jackson-databind-nullable = { group = "org.openapitools", name = "jackson-databind-nullable", version.ref = "jacksonNullable" }
+
+# Jakarta
+jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validation-api", version.ref = "jakartaValidation" }
+jakarta-annotation-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakartaAnnotation" }
+jakarta-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api", version.ref = "jakartaServlet" }
+
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+openapi-generator = {id = "org.openapi.generator", version.ref = "openapi"}

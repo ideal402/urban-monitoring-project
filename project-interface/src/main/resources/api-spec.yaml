@@ -18,6 +18,7 @@ paths:
   # 현재화면 혼잡도 정보 가져오기 (SSE)
   /map:
     get:
+      operationId: getMapData
       tags: [Map]
       summary: 지역별 혼잡도/날씨/대기질 조회 (SSE)
       description: |
@@ -40,6 +41,7 @@ paths:
   # 혼잡도 예상정보 가져오기 (SSE)
   /map/forecast:
     get:
+      operationId: getMapForecast
       tags: [Map]
       summary: 지역별 혼잡 예상도 조회 (SSE)
       parameters:
@@ -60,6 +62,7 @@ paths:
   # 특정 지역 상세정보 보이기
   /summary/{regionId}:
     get:
+      operationId: getRegionSummary
       tags: [Map]
       summary: 특정 지역 상세 정보 조회
       parameters:
@@ -82,6 +85,7 @@ paths:
   # 회원가입
   /signup:
     post:
+      operationId: signup
       tags: [Auth]
       summary: 회원가입
       requestBody:
@@ -107,6 +111,7 @@ paths:
   # 로그인
   /signin:
     post:
+      operationId: signin
       tags: [Auth]
       summary: 로그인
       requestBody:
@@ -140,6 +145,7 @@ paths:
   # 로그아웃
   /signout:
     post:
+      operationId: signout
       tags: [Auth]
       summary: 로그아웃
       responses:
@@ -153,6 +159,7 @@ paths:
   # 회원탈퇴
   /user:
     delete:
+      operationId: deleteUser
       tags: [User]
       summary: 회원 탈퇴
       security:
@@ -181,6 +188,7 @@ paths:
   # 알림 설정 하기 (Set)
   /alarms/{regionId}:
     post:
+      operationId: setAlarms
       tags: [User]
       summary: 알림 지역 추가
       security:
@@ -205,6 +213,7 @@ paths:
         '404':
           description: 존재하지 않는 지역 ID
     delete:
+      operationId: deleteAlarms
       tags: [User]
       summary: 지역 알림 끄기
       security:
