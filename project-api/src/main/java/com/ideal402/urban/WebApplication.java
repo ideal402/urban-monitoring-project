@@ -1,4 +1,4 @@
-package com.ideal402.urdan;
+package com.ideal402.urban;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
