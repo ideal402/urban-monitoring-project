@@ -1,0 +1,14 @@
+INSERT INTO region_status
+(region_id, congestion_level, weather_code, air_quality_level, measurement_time)
+VALUES
+    (1, 1, 10, 1, NOW());
+
+INSERT INTO region_status
+(region_id, congestion_level, weather_code, air_quality_level, measurement_time)
+VALUES
+    (2, 2, 20, 2, NOW());
+
+INSERT INTO region_status
+(region_id, congestion_level, weather_code, air_quality_level, measurement_time)
+VALUES
+    (3, 3, 30, 3, NOW());

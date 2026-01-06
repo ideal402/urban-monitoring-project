@@ -1,0 +1,342 @@
+openapi: 3.0.3
+info:
+  title: Seoul Map Service API
+  description: 서울시 실시간 지도 서비스 및 혼잡도/날씨 정보 API 명세
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: 로컬 개발 서버
+tags:
+  - name: Map
+    description: 지도 및 실시간/예측 데이터
+  - name: Auth
+    description: 인증(회원가입/로그인)
+  - name: User
+    description: 사용자 관리 및 알람 설정
+
+paths:
+  # 혼잡도 정보 가져오기 (SSE)
+  /map/stream/current:
+    get:
+      operationId: getMapDataConnection
+      tags: [Map]
+      summary: 지역별 혼잡도/날씨/대기질 조회 (SSE)
+      description: |
+        클라이언트가 연결하면 서버는 연결을 유지하며 데이터 변경 시 이벤트를 전송.
+      responses:
+        '200':
+          description: Connection established
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/MapStream'
+
+  # 혼잡도 예상정보 가져오기 (SSE)
+  /map/stream/forecast:
+    get:
+      operationId: getMapForecastConnection
+      tags: [Map]
+      summary: 지역별 혼잡 예상도 조회 (SSE)
+      responses:
+        '200':
+          description: Connection established
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/MapStream'
+
+##클라이언트 뷰포트 업데이트
+#/map/filter:
+#  post:
+#    operationId: updateMapFilter
+#    tags: [Map]
+#    summary: 클라이언트 뷰포트 업데이트
+#    description: |
+#      사용자가 지도를 이동/줌 했을 때 호출.
+#      서버는 이 정보를 바탕으로 SSE로 내려줄 데이터 범위를 조절할 수 있음.
+#    requestBody:
+#      required: true
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/MapFilterRequest'
+#    responses:
+#      '200':
+#        description: 필터 업데이트 성공
+#        content:
+#          application/json:
+#            schema:
+#              $ref: '#/components/schemas/CommonResponse'
+
+  # 특정 지역 상세정보 보이기
+  /map/summary/{regionId}:
+    get:
+      operationId: getRegionSummary
+      tags: [Map]
+      summary: 특정 지역 상세 정보 조회
+      parameters:
+        - name: regionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/mapInfo'
+        '404':
+          description: 존재하지 않는 지역 ID
+
+  # 회원가입
+  /signup:
+    post:
+      operationId: signup
+      tags: [Auth]
+      summary: 회원가입
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: fail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+
+  # 로그인
+  /signin:
+    post:
+      operationId: signin
+      tags: [Auth]
+      summary: 로그인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: fail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+
+  # 로그아웃
+  /signout:
+    post:
+      operationId: signOut
+      tags: [Auth]
+      summary: 로그아웃
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+
+  # 회원탈퇴
+  /user:
+    delete:
+      operationId: deleteUser
+      tags: [User]
+      summary: 회원 탈퇴
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  description: 본인 확인을 위한 비밀번호 재입력
+      responses:
+        '204':
+          description: 탈퇴 성공 (반환값 없음)
+        '400':
+          description: 비밀번호 불일치
+        '401':
+          description: 인증 토큰 만료 또는 없음
+
+  # 알림 설정 하기 (Set)
+  /alarms/{regionId}:
+    post:
+      operationId: setAlarms
+      tags: [User]
+      summary: 알림 지역 추가
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: regionId
+          in: path
+          required: true
+          description: 알림을 받을 지역 ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '401':
+          description: 인증 실패 (토큰 없음)
+        '404':
+          description: 존재하지 않는 지역 ID
+    delete:
+      operationId: deleteAlarms
+      tags: [User]
+      summary: 지역 알림 끄기
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: regionId
+          in: path
+          required: true
+          description: 알림을 해제할 지역 ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공 (설정되지 않은 지역이어도 성공 처리 권장)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '401':
+          description: 인증 실패
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    # 1. 통합 맵 정보 DTO (혼잡도, 날씨, 대기, 시간)
+    mapInfo:
+      type: object
+      properties:
+        regionId:
+          type: integer
+          format: int64
+          description: 지역 ID
+        congestionLevel:
+          type: integer
+          format: int64
+          description: 혼잡도 레벨(1:원활 ~ 4:혼잡)
+        weather:
+          type: integer
+          format: int64
+          description: 현재 날씨(기상 코드)
+        air:
+          type: integer
+          format: int64
+          description: 현재 대기질(1:좋음 ~ 4:나쁨)
+        time:
+          type: string
+          format: date-time
+          description: 기준 시간
+
+    # 2. 예상 혼잡도 정보 DTO
+    forecastInfo:
+      type: object
+      properties:
+        region:
+          type: integer
+          format: int64
+          description: 지역 ID
+        congestionLevel:
+          type: integer
+          format: int64
+          description: 혼잡도 예상
+        time:
+          type: string
+          format: date-time
+          description: 예측 기준 시간
+
+    # 3. 회원가입 요청 DTO
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+        - passwordCheck
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+        passwordCheck:
+          type: string
+          format: password
+  
+    # 4. 토큰 응답
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "Access Token (JWT)"
+
+    # 5. 공통 응답 DTO (성공/실패 여부 등)
+    CommonResponse:
+      type: object
+      properties:
+        state:
+          type: integer
+          description: 상태 코드
+        error:
+          type: string
+          description: 에러 메시지 (실패 시)
+
+    #5. sseEmitter
+    MapStream:
+      type: object
+      description: "Spring SseEmitter로 매핑될 스키마"
+      properties:
+        _dummy:
+          type: string
