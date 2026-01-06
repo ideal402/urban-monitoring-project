@@ -20,7 +20,9 @@ val libs = the<VersionCatalogsExtension>().named("libs")
 dependencies {
     compileOnly(libs.findLibrary("lombok").get())
     annotationProcessor(libs.findLibrary("lombok").get())
-    testImplementation(libs.findLibrary("spring-boot-starter-test").get())}
+    testImplementation(libs.findLibrary("spring-boot-starter-test").get())
+    testRuntimeOnly(libs.findLibrary("junit-platform-launcher").get())
+}
 
 // 테스트 테스크 설정
 tasks.withType<Test> {

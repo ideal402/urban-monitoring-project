@@ -1,6 +1,7 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
+    id("java-library")
     id("java-conventions")
     alias(libs.plugins.openapi.generator)
 }
@@ -9,11 +10,11 @@ dependencies{
     implementation(libs.spring.boot.starter.web) {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
     }
-    implementation(libs.swagger.annotations)
-    implementation(libs.jackson.databind.nullable) 
-    implementation(libs.jakarta.validation.api)
-    implementation(libs.jakarta.annotation.api)
-    compileOnly(libs.jakarta.servlet.api)
+    "api"(libs.swagger.annotations)
+    "api"(libs.jackson.databind.nullable)
+    "api"(libs.jakarta.validation.api)
+    "api"(libs.jakarta.annotation.api)
+    "api"(libs.jakarta.servlet.api)
 }
 
 // OpenAPI Generate 설정
@@ -26,8 +27,8 @@ tasks.named<GenerateTask>("openApiGenerate") {
     // [출력 설정] 현재 모듈의 build 폴더 내부에 생성
     outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.absolutePath)
 
-    apiPackage.set("com.ideal402.urdan.api.controller")
-    modelPackage.set("com.ideal402.urdan.api.dto")
+    apiPackage.set("com.ideal402.urban.api.controller")
+    modelPackage.set("com.ideal402.urban.api.dto")
 
     configOptions.set(mapOf(
         "dateLibrary" to "java8",
