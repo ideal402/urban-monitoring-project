@@ -15,19 +15,14 @@ tags:
     description: 사용자 관리 및 알람 설정
 
 paths:
-  # 현재화면 혼잡도 정보 가져오기 (SSE)
-  /map:
+  # 혼잡도 정보 가져오기 (SSE)
+  /map/stream/current:
     get:
-      operationId: getMapData
+      operationId: getMapDataConnection
       tags: [Map]
       summary: 지역별 혼잡도/날씨/대기질 조회 (SSE)
       description: |
         클라이언트가 연결하면 서버는 연결을 유지하며 데이터 변경 시 이벤트를 전송.
-      parameters:
-        - name: regionId
-          in: query
-          schema:
-            type: integer
       responses:
         '200':
           description: Connection established
@@ -39,16 +34,11 @@ paths:
                   $ref: '#/components/schemas/mapInfo'
 
   # 혼잡도 예상정보 가져오기 (SSE)
-  /map/forecast:
+  /map/stream/forecast:
     get:
-      operationId: getMapForecast
+      operationId: getMapForecastConnection
       tags: [Map]
       summary: 지역별 혼잡 예상도 조회 (SSE)
-      parameters:
-        - name: regionId
-          in: query
-          schema:
-            type: integer
       responses:
         '200':
           description: Connection established
@@ -58,9 +48,32 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/forecastInfo'
+#
+##클라이언트 뷰포트 업데이트
+#/map/filter:
+#  post:
+#    operationId: updateMapFilter
+#    tags: [Map]
+#    summary: 클라이언트 뷰포트 업데이트
+#    description: |
+#      사용자가 지도를 이동/줌 했을 때 호출.
+#      서버는 이 정보를 바탕으로 SSE로 내려줄 데이터 범위를 조절할 수 있음.
+#    requestBody:
+#      required: true
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/MapFilterRequest'
+#    responses:
+#      '200':
+#        description: 필터 업데이트 성공
+#        content:
+#          application/json:
+#            schema:
+#              $ref: '#/components/schemas/CommonResponse'
 
   # 특정 지역 상세정보 보이기
-  /summary/{regionId}:
+  /map/summary/{regionId}:
     get:
       operationId: getRegionSummary
       tags: [Map]
@@ -71,7 +84,7 @@ paths:
           required: true
           schema:
             type: integer
-            format: int64
+            format: int32
       responses:
         '200':
           description: success
@@ -145,7 +158,7 @@ paths:
   # 로그아웃
   /signout:
     post:
-      operationId: signout
+      operationId: signOut
       tags: [Auth]
       summary: 로그아웃
       responses:
@@ -248,21 +261,21 @@ components:
     mapInfo:
       type: object
       properties:
-        region:
+        regionId:
           type: integer
-          format: int64
+          format: int32
           description: 지역 ID
         congestionlevel:
           type: integer
-          format: int64
+          format: int32
           description: 혼잡도 레벨(1:원활 ~ 4:혼잡)
         weather:
           type: integer
-          format: int64
+          format: int32
           description: 현재 날씨(기상 코드)
         air:
           type: integer
-          format: int64
+          format: int32
           description: 현재 대기질(1:좋음 ~ 4:나쁨)
         time:
           type: string
@@ -275,11 +288,11 @@ components:
       properties:
         region:
           type: integer
-          format: int64
+          format: int32
           description: 지역 ID
-        congestionlevel:
+        congestionLevel:
           type: integer
-          format: int64
+          format: int32
           description: 혼잡도 예상
         time:
           type: string
