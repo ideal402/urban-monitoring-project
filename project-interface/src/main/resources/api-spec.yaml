@@ -29,9 +29,7 @@ paths:
           content:
             text/event-stream:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/mapInfo'
+                $ref: '#/components/schemas/MapStream'
 
   # 혼잡도 예상정보 가져오기 (SSE)
   /map/stream/forecast:
@@ -45,10 +43,8 @@ paths:
           content:
             text/event-stream:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/forecastInfo'
-#
+                $ref: '#/components/schemas/MapStream'
+
 ##클라이언트 뷰포트 업데이트
 #/map/filter:
 #  post:
@@ -84,7 +80,7 @@ paths:
           required: true
           schema:
             type: integer
-            format: int32
+            format: int64
       responses:
         '200':
           description: success
@@ -263,19 +259,19 @@ components:
       properties:
         regionId:
           type: integer
-          format: int32
+          format: int64
           description: 지역 ID
-        congestionlevel:
+        congestionLevel:
           type: integer
-          format: int32
+          format: int64
           description: 혼잡도 레벨(1:원활 ~ 4:혼잡)
         weather:
           type: integer
-          format: int32
+          format: int64
           description: 현재 날씨(기상 코드)
         air:
           type: integer
-          format: int32
+          format: int64
           description: 현재 대기질(1:좋음 ~ 4:나쁨)
         time:
           type: string
@@ -288,11 +284,11 @@ components:
       properties:
         region:
           type: integer
-          format: int32
+          format: int64
           description: 지역 ID
         congestionLevel:
           type: integer
-          format: int32
+          format: int64
           description: 혼잡도 예상
         time:
           type: string
@@ -326,7 +322,7 @@ components:
           type: string
           description: "Access Token (JWT)"
 
-    # 4. 공통 응답 DTO (성공/실패 여부 등)
+    # 5. 공통 응답 DTO (성공/실패 여부 등)
     CommonResponse:
       type: object
       properties:
@@ -336,3 +332,11 @@ components:
         error:
           type: string
           description: 에러 메시지 (실패 시)
+
+    #5. sseEmitter
+    MapStream:
+      type: object
+      description: "Spring SseEmitter로 매핑될 스키마"
+      properties:
+        _dummy:
+          type: string

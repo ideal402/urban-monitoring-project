@@ -30,6 +30,14 @@ tasks.named<GenerateTask>("openApiGenerate") {
     apiPackage.set("com.ideal402.urban.api.controller")
     modelPackage.set("com.ideal402.urban.api.dto")
 
+    typeMappings.set(mapOf(
+        "MapStream" to "SseEmitter"
+    ))
+
+    importMappings.set(mapOf(
+        "SseEmitter" to "org.springframework.web.servlet.mvc.method.annotation.SseEmitter"
+    ))
+
     configOptions.set(mapOf(
         "dateLibrary" to "java8",
         "useSpringBoot3" to "true",
