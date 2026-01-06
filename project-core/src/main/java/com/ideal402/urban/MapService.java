@@ -34,19 +34,21 @@ public class MapService {
     private MapInfo convertToMapInfo(RegionStatus entity) {
         MapInfo info = new MapInfo();
         info.setRegionId(entity.getRegionId());
-        info.setCongestionlevel(entity.getCongestionLevel());
+        info.setCongestionLevel(entity.getCongestionLevel());
         info.setWeather(entity.getWeatherCode());
         info.setAir(entity.getAirQualityLevel());
         info.setTime(entity.getMeasurementTime());
         return info;
     }
 
-    public List<ForecastInfo>  getForecastData(Integer regionId) {
+    public List<ForecastInfo>  getForecastData( ) {
+        // FIXME: 현재 더미 데이터를 반환 중
+        // TODO: AI 모델 API 연동 및 DB 조회 로직 구현 필요
         List<ForecastInfo> resultList = new ArrayList<>();
 
         ForecastInfo forecast = new ForecastInfo();
-        forecast.setRegion(regionId);
-        forecast.setCongestionLevel(4);
+        forecast.setRegion(1L);
+        forecast.setCongestionLevel(4L);
         forecast.setTime(OffsetDateTime.now());
 
         resultList.add(forecast);
@@ -54,12 +56,12 @@ public class MapService {
         return resultList;
     }
 
-    public MapInfo getRegionSummary(Integer regionId) {
+    public MapInfo getRegionSummary(Long regionId) {
         MapInfo info = new MapInfo();
         info.setRegionId(regionId);
-        info.setCongestionlevel(4);
-        info.setWeather(1);
-        info.setAir(2);
+        info.setCongestionLevel(4L);
+        info.setWeather(1L);
+        info.setAir(2L);
         info.setTime(OffsetDateTime.now());
 
         return info;

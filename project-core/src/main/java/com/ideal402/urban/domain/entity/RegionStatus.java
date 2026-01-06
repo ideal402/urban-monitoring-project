@@ -20,18 +20,18 @@ public class RegionStatus {
     private Long id;
 
     @Column(nullable = false)
-    private Integer regionId;
+    private Long regionId;
 
-    private Integer congestionLevel;
-    private Integer weatherCode;
-    private Integer airQualityLevel;
+    private Long congestionLevel;
+    private Long weatherCode;
+    private Long airQualityLevel;
 
     private OffsetDateTime measurementTime;
 
-    public RegionStatus(Integer regionId,
-                        Integer congestionLevel,
-                        Integer weatherCode,
-                        Integer airQualityLevel,
+    public RegionStatus(Long regionId,
+                        Long congestionLevel,
+                        Long weatherCode,
+                        Long airQualityLevel,
                         OffsetDateTime measurementTime
     ) {
         this.regionId = regionId;
