@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.validation)
 //    runtimeOnly(libs.h2)
     implementation(project(":project-interface"))
     implementation(project(":project-core"))
