@@ -29,6 +29,7 @@ paths:
           required: false
           schema:
             type: integer
+            format: int32
           description: 특정 지역 필터링 (생략 시 전체 조회)
       responses:
         '200':
@@ -53,6 +54,7 @@ paths:
           required: false
           schema:
             type: integer
+            format: int32
       responses:
         '200':
           description: 조회 성공
@@ -75,14 +77,16 @@ paths:
           required: true
           schema:
             type: integer
-            format: int64
+            format: int32
       responses:
         '200':
           description: 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MapInfo'
+                type: array
+                items:
+                  $ref: '#/components/schemas/MapInfo'
         '404':
           description: 존재하지 않는 지역 ID
 
@@ -197,7 +201,7 @@ paths:
           description: 알림을 받을 지역 ID
           schema:
             type: integer
-            format: int64
+            format: int32
       responses:
         '201':
           description: 알림 설정 완료 (Created)
@@ -219,7 +223,7 @@ paths:
           description: 알림을 해제할 지역 ID
           schema:
             type: integer
-            format: int64
+            format: int32
       responses:
         '204':
           description: 해제 성공 (No Content)
@@ -241,7 +245,7 @@ components:
       properties:
         regionId:
           type: integer
-          format: int64
+          format: int32
         congestionLevel:
           type: integer
           description: "1:원활, 2:보통, 3:약간혼잡, 4:혼잡"
@@ -263,13 +267,14 @@ components:
       properties:
         regionId:
           type: integer
-          format: int64
+          format: int32
           description: 지역 ID
         congestionLevel:
           type: integer
-          format: int64
+          format: int32
           description: 혼잡도 예상
-        time:
+          enum: [ 1, 2, 3, 4 ]
+        timestamp:
           type: string
           format: date-time
           description: 예측 기준 시간
