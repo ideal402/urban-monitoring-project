@@ -12,6 +12,7 @@ junitPlatform = "1.11.4"
 jakartaAnnotation = "2.1.1"
 jakartaValidation = "3.0.2"
 jakartaServlet = "6.0.0"
+jjwt = "0.12.6"
 
 [libraries]
 # Spring boot Starters
@@ -19,6 +20,15 @@ spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-b
 spring-boot-starter-data-jpa = {group = "org.springframework.boot", name = "spring-boot-starter-data-jpa", version.ref = "springBoot"}
 spring-boot-starter-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation", version.ref = "springBoot" }
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
+spring-boot-starter-security = {group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "springBoot"}
+
+# 보안 테스트
+spring-security-test = {group = "org.springframework.security", name = "spring-security-test"}
+
+# jwt token
+jjwt-api = { group = "io.jsonwebtoken", name = "jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { group = "io.jsonwebtoken", name = "jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { group = "io.jsonwebtoken", name = "jjwt-jackson", version.ref = "jjwt"}
 
 # DB 관련
 h2 = { group = "com.h2database", name = "h2", version = "2.2.224" }
@@ -47,3 +57,6 @@ spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
 openapi-generator = {id = "org.openapi.generator", version.ref = "openapi"}
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+[bundles]
+auth-api = ["swagger-annotations", "jakarta-validation-api", "jakarta-annotation-api", "jackson-databind-nullable"]

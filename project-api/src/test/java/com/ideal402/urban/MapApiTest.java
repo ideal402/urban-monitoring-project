@@ -3,6 +3,8 @@ package com.ideal402.urban;
 import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.common.GlobalExceptionHandler;
+import com.ideal402.urban.common.ResourceNotFoundException;
+import com.ideal402.urban.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MapController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
 public class MapApiTest {
 
     @Autowired
@@ -88,7 +90,7 @@ public class MapApiTest {
         mockMvc.perform(get("/map/current")
                         .param("regionId", "1000")
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andDo(print());
     }
 
@@ -135,10 +137,12 @@ public class MapApiTest {
     @Test
     @DisplayName("Forecast Data: 존재하지 않는 ID 테스트")
     void getForecastDataByNonexistIdTest() throws Exception {
-        given(mapService.getForecastData(1000)).willThrow(new IllegalArgumentException());
+        given(mapService.getForecastData(1000))
+                .willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."));
 
-        mockMvc.perform(get("/map/forecast").param("regionId", "1000").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+        mockMvc.perform(get("/map/forecast").param("regionId", "1000")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
                 .andDo(print());
     }
 
@@ -168,9 +172,10 @@ public class MapApiTest {
     @Test
     @DisplayName("Summery Data: 존재하지 않는 ID 테스트")
     void getSummeryDataByNonexistIdTest() throws Exception {
-        given(mapService.getRegionSummary(1000)).willThrow(new IllegalArgumentException());
+        given(mapService.getRegionSummary(1000))
+                .willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."));
 
-        mockMvc.perform(get("/map/summary{regionId}",1000)
+        mockMvc.perform(get("/map/summary/{regionId}",1000)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andDo(print());
