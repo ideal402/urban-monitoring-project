@@ -6,6 +6,7 @@ dependencies{
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.security)
     runtimeOnly(libs.h2)
     implementation(project(":project-interface"))
 }

@@ -81,7 +81,6 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        // 서비스에서 예외를 던지도록 설정 (GlobalExceptionHandler가 처리한다고 가정)
         given(authService.signup(anyString(), anyString(), anyString()))
                 .willThrow(new IllegalStateException("이미 사용중인 이메일입니다."));
 
@@ -144,6 +143,7 @@ public class AuthApiTest {
     @Test
     @DisplayName("signOut: 정상 요청 테스트 - 200 OK")
     @WithMockUser
+
     public void signOutTest() throws Exception {
         mockMvc.perform(post("/auth/signout")
                         .header("Authorization", "Bearer test-token")) // 헤더 추가

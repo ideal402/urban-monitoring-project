@@ -209,8 +209,6 @@ paths:
           description: 알림 설정 완료 (Created)
         '404':
           description: 존재하지 않는 지역 ID
-        '409':
-          description: 이미 설정된 지역 (Conflict)
 
     delete:
       operationId: deleteAlarms
@@ -229,8 +227,6 @@ paths:
       responses:
         '204':
           description: 해제 성공 (No Content)
-        '404':
-          description: 설정되지 않았거나 존재하지 않는 지역
 
 
 components:

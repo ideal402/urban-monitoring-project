@@ -85,7 +85,7 @@ public class MapApiTest {
     void getMapDataByNonexistIdTest() throws Exception {
 
         given(mapService.getMapData(1000))
-                .willThrow(new IllegalArgumentException("존재하지않는 지역입니다."));
+                .willThrow(new ResourceNotFoundException("존재하지않는 지역입니다."));
 
         mockMvc.perform(get("/map/current")
                         .param("regionId", "1000")
@@ -170,7 +170,7 @@ public class MapApiTest {
     }
 
     @Test
-    @DisplayName("Summery Data: 존재하지 않는 ID 테스트")
+    @DisplayName("Summery Data: 존재하지 않는 ID 테스트 - 404")
     void getSummeryDataByNonexistIdTest() throws Exception {
         given(mapService.getRegionSummary(1000))
                 .willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."));
@@ -182,7 +182,7 @@ public class MapApiTest {
     }
 
     @Test
-    @DisplayName("Summery Data: 잘못된 요청 테스트")
+    @DisplayName("Summery Data: 타입 불일치 요청 - 400")
     void getSummeryDataBadRequestTest() throws Exception {
 
         mockMvc.perform(get("/map/summary/{regionId}", "invalid-id")
