@@ -81,7 +81,7 @@ public class MapApiTest {
     }
 
     @Test
-    @DisplayName("Map Data: 존재하지 않는 ID 테스트")
+    @DisplayName("Map Data: 존재하지 않는 ID 테스트 - 404")
     void getMapDataByNonexistIdTest() throws Exception {
 
         given(mapService.getMapData(1000))
@@ -135,7 +135,7 @@ public class MapApiTest {
     }
 
     @Test
-    @DisplayName("Forecast Data: 존재하지 않는 ID 테스트")
+    @DisplayName("Forecast Data: 존재하지 않는 ID 테스트 - 404")
     void getForecastDataByNonexistIdTest() throws Exception {
         given(mapService.getForecastData(1000))
                 .willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."));
