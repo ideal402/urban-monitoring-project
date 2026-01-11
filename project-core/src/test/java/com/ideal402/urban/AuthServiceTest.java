@@ -13,9 +13,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
@@ -36,6 +39,12 @@ public class AuthServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
 
     @Test
     @DisplayName("singUp: 성공")
@@ -136,5 +145,61 @@ public class AuthServiceTest {
         assertThrows(IllegalArgumentException.class, () -> authService.signin(request));
 
         verify(jwtTokenProvider, never()).createToken(request.getEmail());
+    }
+
+    @Test
+    @DisplayName("signOut: 성공 - redis 블랙리스트 등록")
+    public void signOut_Success_returnVoid() throws Exception {
+        //given
+        String rawToken = "pure-test-token";
+        String headerToken = "Bearer " + rawToken;
+        Long expiration = 3600000L;
+
+        given(jwtTokenProvider.validateToken(rawToken)).willReturn(true);
+
+        given(jwtTokenProvider.getExpiration(rawToken)).willReturn(expiration);
+
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+        //when
+        authService.signout(headerToken);
+
+        //then
+        verify(valueOperations,times(1)).set(rawToken, "logout", expiration, TimeUnit.MILLISECONDS);
+
+    }
+
+    @Test
+    @DisplayName("signOut: 성공 - Bearer 접두사가 없는 토큰이 와도 처리")
+    void signOut_Success_no_bearer_prefix()  throws Exception {
+        //given
+        String rawToken = "pure-test-token";
+        Long expiration = 3600000L;
+
+        given(jwtTokenProvider.validateToken(rawToken)).willReturn(true);
+        given(jwtTokenProvider.getExpiration(rawToken)).willReturn(expiration);
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+        //when
+        authService.signout(rawToken);
+
+        //then
+        verify(valueOperations,times(1)).set(rawToken, "logout", expiration, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    @DisplayName("singOut: 실패 - 유효하지 않은 토큰")
+    public void signOut_Fail_InvalidToken() throws Exception {
+        //given
+        String rawToken = "invalid-token";
+        String headerToken = "Bearer " + rawToken;
+        Long expiration = 3600000L;
+
+        given(jwtTokenProvider.validateToken(rawToken)).willReturn(false);
+
+        //when&then
+        assertThrows(IllegalArgumentException.class, () -> authService.signout(headerToken));
+
+        verify(redisTemplate, never()).opsForValue();
     }
 }
