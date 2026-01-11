@@ -46,7 +46,7 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        given(authService.signup(anyString(), anyString(), anyString()))
+        given(authService.signup(request))
                 .willReturn(new AuthResponse().accessToken("token").tokenType("Bearer"));
 
         mockMvc.perform(post("/auth/signup")
@@ -81,7 +81,7 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        given(authService.signup(anyString(), anyString(), anyString()))
+        given(authService.signup(request))
                 .willThrow(new IllegalStateException("이미 사용중인 이메일입니다."));
 
         mockMvc.perform(post("/auth/signup")
@@ -98,7 +98,7 @@ public class AuthApiTest {
                 .email("test@test.com")
                 .password("pass123");
 
-        given(authService.signin(anyString(), anyString()))
+        given(authService.signin(request))
                 .willReturn(new AuthResponse().accessToken("token").tokenType("Bearer"));
 
         mockMvc.perform(post("/auth/signin")
@@ -115,7 +115,7 @@ public class AuthApiTest {
                 .email("test@test.com")
                 .password("wrong-pass");
 
-        given(authService.signin(anyString(), anyString()))
+        given(authService.signin(request))
                 .willThrow(new AuthenticationFailedException("비밀번호가 일치하지 않습니다."));
 
         mockMvc.perform(post("/auth/signin")
