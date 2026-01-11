@@ -17,12 +17,8 @@ public class AuthController implements AuthApi {
 
     @Override
     public ResponseEntity<AuthResponse> signup(SignupRequest request) throws Exception {
-        //body에서 값 가져오기
-        AuthResponse response = authService.signup(
-                request.getUsername(),
-                request.getEmail(),
-                request.getPassword()
-        );
+
+        AuthResponse response = authService.signup(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -31,10 +27,8 @@ public class AuthController implements AuthApi {
 
     @Override
     public ResponseEntity<AuthResponse> signin(SigninRequest request) throws Exception {
-        AuthResponse response = authService.signin(
-                request.getEmail(),
-                request.getPassword()
-        );
+
+        AuthResponse response = authService.signin(request);
 
         return ResponseEntity.ok(response);
     }

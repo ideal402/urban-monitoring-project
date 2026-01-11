@@ -283,7 +283,7 @@ components:
       required:
         - email
         - password
-        - userName
+        - username
       properties:
         email:
           type: string
