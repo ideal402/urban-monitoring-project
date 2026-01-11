@@ -37,7 +37,7 @@ public class User {
     }
 
     public void addAlarm(Integer regionId) {
-        UserAlarm alarm = new UserAlarm(regionId, this);
+        UserAlarm alarm = new UserAlarm( this, regionId);
         this.alarms.add(alarm);
     }
 

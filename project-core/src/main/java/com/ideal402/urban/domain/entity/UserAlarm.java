@@ -22,7 +22,7 @@ public class UserAlarm {
     @Column(nullable = false)
     private Integer regionId;
 
-    public UserAlarm(Integer regionId, User user) {
+    public UserAlarm(User user, Integer regionId) {
         this.regionId = regionId;
         this.user = user;
     }
