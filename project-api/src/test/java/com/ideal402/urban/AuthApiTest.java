@@ -7,17 +7,18 @@ import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.config.SecurityConfig;
+import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -36,6 +37,12 @@ public class AuthApiTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RedisTemplate<String, String> redisTemplate;
 
     @Test
     @DisplayName("signup: 정상 요청 테스트 - 201 Created")

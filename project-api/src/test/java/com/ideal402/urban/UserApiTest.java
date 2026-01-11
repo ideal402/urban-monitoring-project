@@ -8,11 +8,13 @@ import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.common.ResourceNotFoundException;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.domain.entity.User;
+import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,8 +44,16 @@ public class UserApiTest {
 
     @MockitoBean
     private UserService userService;
+
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RedisTemplate<String, String> redisTemplate;
+
 
     @Test
     @DisplayName("setAlarm: 정상 동작")
