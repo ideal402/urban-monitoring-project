@@ -7,9 +7,12 @@ import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -19,6 +22,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
@@ -59,7 +63,27 @@ public class AuthService {
     }
 
     @Transactional
-    public void signout() {
-        //TODO// 로그아웃 로직 구현하기
+    public void signout(String accessToken) {
+
+        String token = resolveToken(accessToken);
+
+        if(!jwtTokenProvider.validateToken(token)) {
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+        }
+
+        Long expiration = jwtTokenProvider.getExpiration(token);
+
+        if(expiration > 0){
+            redisTemplate.opsForValue()
+                    .set(token, "logout", expiration, TimeUnit.MILLISECONDS);
+        }
+
+    }
+
+    private String resolveToken(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7);
+        }
+        return token;
     }
 }

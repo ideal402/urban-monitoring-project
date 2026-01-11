@@ -7,6 +7,7 @@ import com.ideal402.urban.api.dto.SignupRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,8 +35,9 @@ public class AuthController implements AuthApi {
     }
 
     @Override
-    public ResponseEntity<Void> signout() throws Exception {
-        authService.signout();
+    public ResponseEntity<Void> signout(@RequestHeader("Authorization") String accessToken) throws Exception {
+
+        authService.signout(accessToken);
 
         return ResponseEntity.ok().build();
     }

@@ -8,6 +8,7 @@ dependencies{
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.jjwt.api)
+    implementation(libs.spring.boot.starter.data.redis)
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
     runtimeOnly(libs.h2)

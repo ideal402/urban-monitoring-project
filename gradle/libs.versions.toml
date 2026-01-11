@@ -18,6 +18,7 @@ jjwt = "0.12.6"
 # Spring boot Starters
 spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "springBoot" }
 spring-boot-starter-data-jpa = {group = "org.springframework.boot", name = "spring-boot-starter-data-jpa", version.ref = "springBoot"}
+spring-boot-starter-data-redis = {group ="org.springframework.boot", name ="spring-boot-starter-data-redis", version.ref = "springBoot"}
 spring-boot-starter-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation", version.ref = "springBoot" }
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
 spring-boot-starter-security = {group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "springBoot"}
