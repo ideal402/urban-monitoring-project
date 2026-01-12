@@ -7,12 +7,14 @@ import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.config.SecurityConfig;
+import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import com.ideal402.urban.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
@@ -38,6 +40,9 @@ public class AuthApiTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;

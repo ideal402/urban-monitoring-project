@@ -1,5 +1,6 @@
 package com.ideal402.urban.config;
 
+import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.global.security.filter.JwtAuthenticationFilter;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
+    private final UserRepository userRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -54,7 +56,7 @@ public class SecurityConfig {
                 )
 
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate),
+                        new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate, userRepository),
                         UsernamePasswordAuthenticationFilter.class
                 );
                 return http.build();

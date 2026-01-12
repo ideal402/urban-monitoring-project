@@ -1,5 +1,7 @@
 package com.ideal402.urban.global.security.filter;
 
+import com.ideal402.urban.domain.entity.User;
+import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,8 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -28,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -74,13 +76,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 토큰에서 이메일 추출
         String email = jwtTokenProvider.getEmail(token);
 
-        // 현재는 권한(Role)이 없으므로 USER 권한을 강제로 부여 (추후 DB에서 가져오게 확장 가능)
+        // DB에서 도메인 엔티티(User)를 직접 조회
+        User userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다: " + email));
+
+        // 권한 설정
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
-        // UserDetails 객체 생성 (비밀번호는 보안상 빈 문자열)
-        UserDetails principal = new User(email, "", authorities);
-
         // UsernamePasswordAuthenticationToken 생성하여 반환
-        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        return new UsernamePasswordAuthenticationToken(userEntity, "", authorities);
     }
 }

@@ -5,6 +5,7 @@ import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.common.ResourceNotFoundException;
 import com.ideal402.urban.config.SecurityConfig;
+import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import com.ideal402.urban.service.MapService;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,9 @@ public class MapApiTest {
 
     @MockitoBean
     private MapService mapService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;

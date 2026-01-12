@@ -7,6 +7,7 @@ import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.common.ResourceNotFoundException;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.domain.entity.User;
+import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import com.ideal402.urban.service.UserService;
 import org.junit.jupiter.api.DisplayName;
@@ -37,13 +38,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserApiTest {
 
     @Autowired
-    private UserApi userApi;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -62,7 +63,7 @@ public class UserApiTest {
 
         var authToken = new UsernamePasswordAuthenticationToken(mockUser,"test",null);
 
-        willDoNothing().given(userService).save(any(User.class), eq(1));
+        willDoNothing().given(userService).addAlarm(any(User.class), eq(1));
 
         mockMvc.perform(post("/users/me/alarms/{regionId}", 1)
                     .with(authentication(authToken))
@@ -80,7 +81,7 @@ public class UserApiTest {
         var authToken = new UsernamePasswordAuthenticationToken(mockUser,"test",null);
 
         willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."))
-                .given(userService).save(any(User.class), eq(1000));
+                .given(userService).addAlarm(any(User.class), eq(1000));
 
         mockMvc.perform(post("/users/me/alarms/{regionId}", 1000)
                     .with(authentication(authToken))
@@ -96,7 +97,7 @@ public class UserApiTest {
         User mockUser = new User("test","test@email","test");
         var authToken = new UsernamePasswordAuthenticationToken(mockUser,"test",null);
 
-        willDoNothing().given(userService).delete(any(User.class), eq(1));
+        willDoNothing().given(userService).deleteAlarm(any(User.class), eq(1));
 
         mockMvc.perform(delete("/users/me/alarms/{regionId}", 1)
                 .with(authentication(authToken))
