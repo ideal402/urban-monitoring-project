@@ -16,19 +16,38 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Integer regionNum = 20;
 
     @Transactional
     public void addAlarm(User user, Integer regionId) {
-        user.addAlarm(regionId);
 
-        userRepository.save(user);
+        if (regionId == null || regionId < 0 || regionId > regionNum) {
+            throw new IllegalArgumentException("Region Id can't be greater than 20");
+        }
+
+        boolean isDuplicate = user.getAlarms().stream()
+                .anyMatch(alarm -> alarm.getRegionId().equals(regionId));
+
+        if (!isDuplicate) {
+            user.addAlarm(regionId);
+            userRepository.save(user);
+        }
     }
 
     @Transactional
     public void deleteAlarm(User user, Integer regionId) {
-        user.removeAlarm(regionId);
 
-        userRepository.save(user);
+        if (regionId == null || regionId < 0 || regionId > regionNum) {
+            throw new IllegalArgumentException("Region Id can't be greater than 20");
+        }
+
+        boolean isExist = user.getAlarms().stream()
+                .anyMatch(alarm -> alarm.getRegionId().equals(regionId));
+
+        if (isExist) {
+            user.removeAlarm(regionId);
+            userRepository.save(user);
+        }
     }
 
 

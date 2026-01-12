@@ -9,5 +9,4 @@ import java.util.Optional;
 
 @Repository
 public interface UserAlarmRepository extends JpaRepository<UserAlarm, Long> {
-    void deleteByUserAndRegionId(User user, Integer regionId);
 }
