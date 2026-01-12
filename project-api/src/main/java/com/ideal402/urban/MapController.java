@@ -3,6 +3,7 @@ package com.ideal402.urban;
 import com.ideal402.urban.api.controller.MapApi;
 import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
+import com.ideal402.urban.service.MapService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;

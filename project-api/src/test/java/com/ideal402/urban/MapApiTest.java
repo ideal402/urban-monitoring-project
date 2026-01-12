@@ -6,6 +6,7 @@ import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.common.ResourceNotFoundException;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
+import com.ideal402.urban.service.MapService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

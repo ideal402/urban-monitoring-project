@@ -4,6 +4,7 @@ import com.ideal402.urban.api.controller.AuthApi;
 import com.ideal402.urban.api.dto.AuthResponse;
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
+import com.ideal402.urban.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

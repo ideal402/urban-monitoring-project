@@ -3,6 +3,7 @@ package com.ideal402.urban;
 import com.ideal402.urban.api.controller.UserApi;
 import com.ideal402.urban.api.dto.WithdrawUserRequest;
 import com.ideal402.urban.domain.entity.User;
+import com.ideal402.urban.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

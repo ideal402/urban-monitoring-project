@@ -1,4 +1,4 @@
-package com.ideal402.urban;
+package com.ideal402.urban.service;
 
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.entity.UserAlarm;

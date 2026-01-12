@@ -1,4 +1,4 @@
-package com.ideal402.urban;
+package com.ideal402.urban.service;
 
 import com.ideal402.urban.api.dto.AuthResponse;
 import com.ideal402.urban.api.dto.SigninRequest;
