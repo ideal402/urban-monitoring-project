@@ -36,7 +36,7 @@ public class UserEntityTest {
     }
 
     @Test
-    @DisplayName("초기화: 알람 리스트는 생성 후 빈 리스트 반환 확인")
+    @DisplayName("addAlarm: 알람 생성 후 리스트 반환 확인")
     public void addAlarm_ValidRegionId_AddsAlarmToAlarmsList() {
         //given
         User user = new User("username", "email", "encodedPassword");
@@ -53,5 +53,22 @@ public class UserEntityTest {
 
         assertThat(addedAlarm.getUser()).isEqualTo(user);
     }
+
+    @Test
+    @DisplayName("removeAlarm: 특정 지역 ID의 알람만 정확히 삭제되어야 한다.")
+    void removeAlarm_Success() {
+        // given
+        User user = new User("username", "email", "hash");
+        user.addAlarm(1);
+        user.addAlarm(2);
+
+        // when
+        user.removeAlarm(1);
+
+        // then
+        assertThat(user.getAlarms()).hasSize(1);
+        assertThat(user.getAlarms().getFirst().getRegionId()).isEqualTo(2);
+    }
+
 
 }
