@@ -1,6 +1,6 @@
 //package com.ideal402.urdan;
 //
-//import com.ideal402.urban.MapService;
+//import com.ideal402.urban.service.MapService;
 //import com.ideal402.urban.api.dto.MapInfo;
 //import com.ideal402.urban.domain.entity.RegionStatus;
 //import com.ideal402.urban.domain.repository.RegionStatusRepository;

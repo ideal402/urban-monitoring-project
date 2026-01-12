@@ -7,9 +7,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_alarms")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(
+        name = "user_alarms",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_user_region",
+                        columnNames = {"user_id", "region_id"}
+                )
+        }
+)
 public class UserAlarm {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +27,7 @@ public class UserAlarm {
     @JoinColumn(name ="user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column(name = "region_id", nullable = false)
     private Integer regionId;
 
     public UserAlarm(User user, Integer regionId) {

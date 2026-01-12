@@ -7,17 +7,21 @@ import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.config.SecurityConfig;
+import com.ideal402.urban.domain.repository.UserRepository;
+import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
+import com.ideal402.urban.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -37,6 +41,15 @@ public class AuthApiTest {
     @MockitoBean
     private AuthService authService;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RedisTemplate<String, String> redisTemplate;
+
     @Test
     @DisplayName("signup: 정상 요청 테스트 - 201 Created")
     public void signupTest() throws Exception{
@@ -46,7 +59,7 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        given(authService.signup(anyString(), anyString(), anyString()))
+        given(authService.signup(request))
                 .willReturn(new AuthResponse().accessToken("token").tokenType("Bearer"));
 
         mockMvc.perform(post("/auth/signup")
@@ -81,7 +94,7 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        given(authService.signup(anyString(), anyString(), anyString()))
+        given(authService.signup(request))
                 .willThrow(new IllegalStateException("이미 사용중인 이메일입니다."));
 
         mockMvc.perform(post("/auth/signup")
@@ -98,7 +111,7 @@ public class AuthApiTest {
                 .email("test@test.com")
                 .password("pass123");
 
-        given(authService.signin(anyString(), anyString()))
+        given(authService.signin(request))
                 .willReturn(new AuthResponse().accessToken("token").tokenType("Bearer"));
 
         mockMvc.perform(post("/auth/signin")
@@ -115,7 +128,7 @@ public class AuthApiTest {
                 .email("test@test.com")
                 .password("wrong-pass");
 
-        given(authService.signin(anyString(), anyString()))
+        given(authService.signin(request))
                 .willThrow(new AuthenticationFailedException("비밀번호가 일치하지 않습니다."));
 
         mockMvc.perform(post("/auth/signin")

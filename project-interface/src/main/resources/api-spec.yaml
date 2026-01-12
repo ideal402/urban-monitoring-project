@@ -152,7 +152,14 @@ paths:
       tags: [Auth]
       summary: 로그아웃
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
+      parameters:
+        - name: Authorization
+          in: header
+          description: Bearer Token
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: 로그아웃 성공
@@ -283,7 +290,7 @@ components:
       required:
         - email
         - password
-        - userName
+        - username
       properties:
         email:
           type: string

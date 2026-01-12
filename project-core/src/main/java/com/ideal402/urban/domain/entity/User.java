@@ -41,4 +41,8 @@ public class User {
         this.alarms.add(alarm);
     }
 
+    public void removeAlarm(Integer regionId) {
+        this.alarms.removeIf(alarm -> alarm.getRegionId().equals(regionId));
+    }
+
 }
