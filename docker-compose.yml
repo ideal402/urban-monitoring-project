@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4 # 일반 postgres가 아닌 postgis 이미지를 사용해야 합니다.
+    container_name: seoul-map-db
+    environment:
+      POSTGRES_DB: seoulmap        # 생성할 DB 이름
+      POSTGRES_USER: user          # DB 계정
+      POSTGRES_PASSWORD: password  # DB 비밀번호
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db_data:/var/lib/postgresql/data # 컨테이너가 내려가도 데이터가 사라지지 않게 로컬에 저장
+    restart: always
