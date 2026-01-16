@@ -3,15 +3,21 @@ plugins {
 }
 
 dependencies{
-    implementation(libs.spring.boot.starter.web)
+    //data
     implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.hibernate.spatial)
+
+    //Redis
+    implementation(libs.spring.boot.starter.data.redis)
+
+    //tester
+    implementation(libs.spring.boot.starter.test)
+    testRuntimeOnly(libs.h2)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.security)
-    implementation(libs.spring.boot.starter.test)
     implementation(libs.jjwt.api)
-    implementation(libs.spring.boot.starter.data.redis)
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
-    runtimeOnly(libs.h2)
+
     implementation(project(":project-interface"))
 }

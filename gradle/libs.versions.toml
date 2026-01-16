@@ -5,6 +5,8 @@ springDependencyManagement = "1.1.7"
 kotlin = "1.9.25"
 lombok = "1.18.36"  
 openapi = "7.10.0"
+hibernateSpatial = "6.4.1.Final"
+postgresql = "42.7.2"
 
 swaggerAnnotations = "2.2.20"
 jacksonNullable = "0.2.6"
@@ -33,7 +35,8 @@ jjwt-jackson = { group = "io.jsonwebtoken", name = "jjwt-jackson", version.ref =
 
 # DB 관련
 h2 = { group = "com.h2database", name = "h2", version = "2.2.224" }
-mysql-connector-j = { group = "com.mysql", name = "mysql-connector-j", version = "8.3.0" }
+postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
+hibernate-spatial = { group = "org.hibernate", name = "hibernate-spatial", version.ref = "hibernateSpatial" }
 
 # 생산성 도구
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
