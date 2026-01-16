@@ -1,5 +1,8 @@
 .gradle
 build/
+db_data/
+*.db
+*.sqlite
 out/
 bin/
 .DS_Store
