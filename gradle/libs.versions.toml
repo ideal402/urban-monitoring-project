@@ -24,6 +24,7 @@ spring-boot-starter-data-redis = {group ="org.springframework.boot", name ="spri
 spring-boot-starter-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation", version.ref = "springBoot" }
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
 spring-boot-starter-security = {group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "springBoot"}
+spring-boot-starter-actuator = {group ="org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "springBoot"}
 
 # 보안 테스트
 spring-security-test = {group = "org.springframework.security", name = "spring-security-test"}

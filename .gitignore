@@ -10,4 +10,5 @@ bin/
 .idea/
 *.ipr
 *.iws
-*.iml" > .gitignore
+*.iml
+.env

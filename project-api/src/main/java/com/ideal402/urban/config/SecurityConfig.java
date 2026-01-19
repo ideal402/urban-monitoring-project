@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/signout").authenticated()
                         .requestMatchers("/users/me/**").authenticated()
 
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
 
                 .exceptionHandling(ex -> ex
