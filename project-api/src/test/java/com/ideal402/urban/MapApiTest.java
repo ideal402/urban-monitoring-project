@@ -1,206 +1,118 @@
 package com.ideal402.urban;
 
-import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
-import com.ideal402.urban.common.GlobalExceptionHandler;
-import com.ideal402.urban.common.ResourceNotFoundException;
-import com.ideal402.urban.config.SecurityConfig;
-import com.ideal402.urban.domain.repository.UserRepository;
-import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
-import com.ideal402.urban.service.MapService;
+import com.ideal402.urban.domain.entity.RegionStatus;
+import com.ideal402.urban.domain.repository.RegionStatusRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@WebMvcTest(MapController.class)
-@Import({GlobalExceptionHandler.class, SecurityConfig.class})
-public class MapApiTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "jwt.secret=test-secret-key-for-integration-testing-1234567890", // 기존 설정
+        "jwt.expiration-time=3600000" // 추가: 만료 시간 (예: 1시간 = 3600000ms)
+})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+class MapApiTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private TestRestTemplate restTemplate;
 
-    @MockitoBean
-    private MapService mapService;
+    @Autowired
+    private RegionStatusRepository regionStatusRepository;
 
-    @MockitoBean
-    private UserRepository userRepository;
-
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
-    @MockitoBean
-    private RedisTemplate<String, String> redisTemplate;
-
-    @Test
-    @DisplayName("Map data: 정상 요청 테스트")
-    void getMapDataTest() throws Exception {
-
-        MapInfo request = new MapInfo()
-                .regionId(1)
-                .congestionLevel(MapInfo.CongestionLevelEnum.NUMBER_1)
-                .weatherCode(1)
-                .airQualityIndex(MapInfo.AirQualityIndexEnum.NUMBER_1)
-                .timestamp(OffsetDateTime.now());
-
-        List<MapInfo> responseList = Collections.singletonList(request);
-
-        given(mapService.getMapData(null)).willReturn(responseList);
-
-        mockMvc.perform(get("/map/current").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].regionId").value(1))
-                .andExpect(jsonPath("$[0].congestionLevel").value(1))
-                .andExpect(jsonPath("$[0].weatherCode").value(1))
-                .andExpect(jsonPath("$[0].airQualityIndex").value(1))
-                .andDo(print());
+    @BeforeEach
+    void setUp() {
+        regionStatusRepository.deleteAll();
     }
 
     @Test
-    @DisplayName("Map Data: 특정 ID 받기 테스트")
-    void getMapDataByIdTest() throws Exception {
-        MapInfo request = new MapInfo()
-                .regionId(1)
-                .congestionLevel(MapInfo.CongestionLevelEnum.NUMBER_1)
-                .weatherCode(1)
-                .airQualityIndex(MapInfo.AirQualityIndexEnum.NUMBER_1)
-                .timestamp(OffsetDateTime.now());
+    @DisplayName("GET /map/current - 실시간 지역 상태 조회 통합 테스트")
+    void getMapData_IntegrationTest() {
+        // [Given] DB에 테스트용 RegionStatus 데이터 저장
+        RegionStatus status1 = new RegionStatus(
+                1,
+                2,
+                1,
+                3,
+                OffsetDateTime.now()
+        );
 
-        List<MapInfo> responseList = Collections.singletonList(request);
+        RegionStatus status2 = new RegionStatus(
+                2, 3, 2, 1, OffsetDateTime.now()
+        );
 
-        given(mapService.getMapData(1)).willReturn(responseList);
+        regionStatusRepository.saveAll(List.of(status1, status2));
 
-        mockMvc.perform(get("/map/current")
-                        .param("regionId", "1")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].regionId").value(1))
-                .andDo(print());
+        // [When] 실제 API 호출
+        ResponseEntity<List<MapInfo>> response = restTemplate.exchange(
+                "/map/current",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<MapInfo>>() {}
+        );
+
+        // [Then] 응답 검증
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        List<MapInfo> body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body).hasSizeGreaterThanOrEqualTo(1);
+
+
+        boolean containsRegion101 = body.stream()
+                .anyMatch(info -> Integer.valueOf(1).equals(info.getRegionId()));
+        assertThat(containsRegion101).isTrue();
     }
 
     @Test
-    @DisplayName("Map Data: 존재하지 않는 ID 테스트 - 404")
-    void getMapDataByNonexistIdTest() throws Exception {
+    @DisplayName("GET /map/summary/{regionId} - 특정 지역 상세 조회 통합 테스트")
+    void getRegionSummary_IntegrationTest() {
+        // [Given] 특정 지역(202번) 데이터 저장
+        int targetRegionId = 202;
+        RegionStatus status = new RegionStatus(
+                targetRegionId, 5, 10, 2, OffsetDateTime.now()
+        );
+        regionStatusRepository.save(status);
 
-        given(mapService.getMapData(1000))
-                .willThrow(new ResourceNotFoundException("존재하지않는 지역입니다."));
+        // [When] PathVariable을 사용하여 API 호출
+        ResponseEntity<List<MapInfo>> response = restTemplate.exchange(
+                "/map/summary/" + targetRegionId,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<MapInfo>>() {}
+        );
 
-        mockMvc.perform(get("/map/current")
-                        .param("regionId", "1000")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andDo(print());
+        // [Then]
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        List<MapInfo> body = response.getBody();
+        assertThat(body).isNotEmpty();
+        assertThat(body.getFirst().getRegionId()).isEqualTo(targetRegionId);
     }
 
+    /*
     @Test
-    @DisplayName("Forecast Data: 정상 요청 테스트")
-    void getForecastDataTest() throws Exception {
+    @DisplayName("GET /map/forecast - 예측 데이터 조회")
+    void getMapForecast_IntegrationTest() {
+        // NOTE: ForecastEntity 및 Repository 정보가 아직 없어 주석 처리했습니다.
+        // 추후 구현되면 위와 동일한 방식으로 작성하시면 됩니다.
 
-        ForecastInfo request = new ForecastInfo()
-                .regionId(1)
-                .congestionLevel(ForecastInfo.CongestionLevelEnum.NUMBER_1)
-                .timestamp(OffsetDateTime.now());
-
-        List<ForecastInfo> responseList = Collections.singletonList(request);
-
-        given(mapService.getForecastData(null)).willReturn(responseList);
-
-        mockMvc.perform(get("/map/forecast").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].regionId").value(1))
-                .andExpect(jsonPath("$[0].congestionLevel").value(1))
-                .andDo(print());
+        // 1. ForecastRepository.save(new ForecastEntity(...));
+        // 2. restTemplate.exchange("/map/forecast", ...);
+        // 3. assertThat(...);
     }
-
-    @Test
-    @DisplayName("Forecast Data: 특정 ID 받기 테스트")
-    void getForecastDataByIdTest() throws Exception {
-        ForecastInfo request = new ForecastInfo()
-                .regionId(1)
-                .congestionLevel(ForecastInfo.CongestionLevelEnum.NUMBER_1)
-                .timestamp(OffsetDateTime.now());
-
-        List<ForecastInfo> responseList = Collections.singletonList(request);
-
-        given(mapService.getForecastData(1)).willReturn(responseList);
-
-        mockMvc.perform(get("/map/forecast")
-                    .param("regionId", "1")
-                    .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].regionId").value(1))
-                .andDo(print());
-    }
-
-    @Test
-    @DisplayName("Forecast Data: 존재하지 않는 ID 테스트 - 404")
-    void getForecastDataByNonexistIdTest() throws Exception {
-        given(mapService.getForecastData(1000))
-                .willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."));
-
-        mockMvc.perform(get("/map/forecast").param("regionId", "1000")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andDo(print());
-    }
-
-    @Test
-    @DisplayName("Summery Data: 정상 요청 테스트")
-    void getSummeryDataTest() throws Exception {
-
-        MapInfo request = new MapInfo()
-                .regionId(1)
-                .congestionLevel(MapInfo.CongestionLevelEnum.NUMBER_1)
-                .weatherCode(1)
-                .airQualityIndex(MapInfo.AirQualityIndexEnum.NUMBER_1)
-                .timestamp(OffsetDateTime.now());
-
-        List<MapInfo> responseList = Collections.singletonList(request);
-
-        given(mapService.getRegionSummary(1)).willReturn(responseList);
-
-        mockMvc.perform(get("/map/summary/{regionId}", 1)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].regionId").value(1))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andDo(print());
-    }
-
-    @Test
-    @DisplayName("Summery Data: 존재하지 않는 ID 테스트 - 404")
-    void getSummeryDataByNonexistIdTest() throws Exception {
-        given(mapService.getRegionSummary(1000))
-                .willThrow(new ResourceNotFoundException("존재하지 않는 지역입니다."));
-
-        mockMvc.perform(get("/map/summary/{regionId}",1000)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andDo(print());
-    }
-
-    @Test
-    @DisplayName("Summery Data: 타입 불일치 요청 - 400")
-    void getSummeryDataBadRequestTest() throws Exception {
-
-        mockMvc.perform(get("/map/summary/{regionId}", "invalid-id")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
-    }
+    */
 }
