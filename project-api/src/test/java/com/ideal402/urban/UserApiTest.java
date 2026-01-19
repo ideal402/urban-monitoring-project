@@ -1,6 +1,7 @@
 package com.ideal402.urban;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ideal402.urban.api.controller.UserApi;
 import com.ideal402.urban.api.dto.WithdrawUserRequest;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.common.ResourceNotFoundException;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(UserController.class)
 @Import({GlobalExceptionHandler.class, SecurityConfig.class})
-public class UserControllerTest {
+public class UserApiTest {
 
     @Autowired
     private ObjectMapper objectMapper;

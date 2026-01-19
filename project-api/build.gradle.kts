@@ -14,7 +14,6 @@ dependencies {
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.spring.boot.starter.actuator)
     runtimeOnly(libs.postgresql)
-    runtimeOnly(libs.h2)
     implementation(project(":project-interface"))
     implementation(project(":project-core"))
 }
