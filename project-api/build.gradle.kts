@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.bundles.auth.api)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.data.redis)
+    implementation(libs.spring.boot.starter.actuator)
     runtimeOnly(libs.postgresql)
     runtimeOnly(libs.h2)
     implementation(project(":project-interface"))
