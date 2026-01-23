@@ -1,5 +1,8 @@
 .gradle
 build/
+db_data/
+*.db
+*.sqlite
 out/
 bin/
 .DS_Store
@@ -7,4 +10,5 @@ bin/
 .idea/
 *.ipr
 *.iws
-*.iml" > .gitignore
+*.iml
+.env
