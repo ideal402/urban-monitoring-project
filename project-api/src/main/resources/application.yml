@@ -15,5 +15,16 @@ spring:
         format_sql: true # 실행되는 SQL을 보기 좋게 정렬
         show_sql: true   # 실행되는 SQL을 콘솔에 출력
 
+<<<<<<< HEAD
 jwt:
   secret: ${JWT_SECRET}
+=======
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health # /actuator/health 엔드포인트 활성화
+    endpoint:
+      health:
+        show-details: always # DB 상태 등 상세 정보 포함 (보안상 운영 환경에서는 never 또는 authorized 권장)
+>>>>>>> dev
