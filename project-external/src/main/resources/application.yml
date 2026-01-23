@@ -1,0 +1,3 @@
+seoul:
+  api:
+    key: ${SEOUL_API_KEY}
