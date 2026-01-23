@@ -15,4 +15,5 @@ dependencies {
     runtimeOnly(libs.postgresql)
     implementation(project(":project-interface"))
     implementation(project(":project-core"))
+    implementation(project(":project-external"))
 }
