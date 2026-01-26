@@ -3,11 +3,17 @@ services:
     image: postgis/postgis:16-3.4 # 일반 postgres가 아닌 postgis 이미지를 사용해야 합니다.
     container_name: seoul-map-db
     environment:
-      POSTGRES_DB: seoulmap        # 생성할 DB 이름
-      POSTGRES_USER: user          # DB 계정
-      POSTGRES_PASSWORD: password  # DB 비밀번호
+      POSTGRES_DB: ${POSTGRES_DB}        # 생성할 DB 이름
+      POSTGRES_USER: ${POSTGRES_USER}          # DB 계정
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # DB 비밀번호
+
+    command: >
+      postgres
+      -c log_connections=on
+      -c log_line_prefix='%m [%p] %h '
+
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ./db_data:/var/lib/postgresql/data # 컨테이너가 내려가도 데이터가 사라지지 않게 로컬에 저장
     restart: always
@@ -28,6 +34,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+
   server:
     build: .
     container_name: seoul-map-server
@@ -42,9 +50,13 @@ services:
       # 컨테이너 내부 통신을 위한 설정 재정의
       # 'localhost' 대신 서비스 명인 'db'를 호스트로 사용해야 함
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/seoulmap
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+
+      # 서버 설정
+      SERVER_PORT: 8080
+
       # JPA 설정
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
@@ -56,3 +68,6 @@ services:
       #Redis 설정
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+
+      # 공공데이터 api
+      SEOUL_API_KEY: ${SEOUL_API_KEY}
