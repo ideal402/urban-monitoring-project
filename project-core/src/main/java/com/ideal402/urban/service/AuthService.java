@@ -2,6 +2,7 @@ package com.ideal402.urban.service;
 
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
+import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +38,7 @@ public class AuthService {
         String username = request.getUsername();
 
         if(userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+            throw new IllegalStateException("이미 사용중인 이메일입니다.");
         }
 
         String encodedPassword = passwordEncoder.encode(rawPassword);
@@ -50,7 +51,6 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public void signin(SigninRequest request, HttpServletRequest httpRequest) {
-
 
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
@@ -66,9 +66,9 @@ public class AuthService {
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 
         } catch (BadCredentialsException e) {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
+            throw new AuthenticationFailedException("아이디 또는 비밀번호가 일치하지 않습니다.");
         } catch (AuthenticationException e) {
-            throw new IllegalArgumentException("로그인에 실패했습니다.");
+            throw new AuthenticationFailedException("로그인에 실패했습니다.");
         }
     }
 
