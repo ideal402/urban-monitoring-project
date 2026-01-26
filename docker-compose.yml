@@ -60,11 +60,6 @@ services:
       # JPA 설정
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
-      # JWT 설정
-      JWT_SECRET: ${JWT_SECRET}
-      # 만료 시간 설정
-      JWT_EXPIRATION_TIME: 3600000
-
       #세션 저장소 설정
       SPRING_SESSION_STORE_TYPE: redis
 
