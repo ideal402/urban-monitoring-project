@@ -1,36 +1,33 @@
 package com.ideal402.urban;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ideal402.urban.api.dto.AuthResponse;
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.domain.repository.UserRepository;
-import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import com.ideal402.urban.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
 @Import({GlobalExceptionHandler.class, SecurityConfig.class})
-public class AuthApiTest {
+public class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -44,11 +41,6 @@ public class AuthApiTest {
     @MockitoBean
     private UserRepository userRepository;
 
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
-    @MockitoBean
-    private RedisTemplate<String, String> redisTemplate;
 
     @Test
     @DisplayName("signup: 정상 요청 테스트 - 201 Created")
@@ -59,15 +51,12 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        given(authService.signup(request))
-                .willReturn(new AuthResponse().accessToken("token").tokenType("Bearer"));
+        willDoNothing().given(authService).signup(any(SignupRequest.class), any(HttpServletRequest.class));
 
         mockMvc.perform(post("/auth/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.accessToken").value("token"))
-                .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andDo(print());
     }
 
@@ -94,8 +83,8 @@ public class AuthApiTest {
                 .username("user")
                 .password("pass123");
 
-        given(authService.signup(request))
-                .willThrow(new IllegalStateException("이미 사용중인 이메일입니다."));
+        willThrow(new IllegalStateException("이미 사용중인 이메일입니다."))
+                .given(authService).signup(any(SignupRequest.class), any(HttpServletRequest.class));
 
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,14 +100,13 @@ public class AuthApiTest {
                 .email("test@test.com")
                 .password("pass123");
 
-        given(authService.signin(request))
-                .willReturn(new AuthResponse().accessToken("token").tokenType("Bearer"));
+        willDoNothing().given(authService).signin(any(SigninRequest.class), any(HttpServletRequest.class));
 
         mockMvc.perform(post("/auth/signin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists());
+                .andDo(print());
     }
 
     @Test
@@ -128,8 +116,8 @@ public class AuthApiTest {
                 .email("test@test.com")
                 .password("wrong-pass");
 
-        given(authService.signin(request))
-                .willThrow(new AuthenticationFailedException("비밀번호가 일치하지 않습니다."));
+        willThrow(new AuthenticationFailedException("비밀번호가 일치하지 않습니다."))
+                .given(authService).signin(any(SigninRequest.class), any(HttpServletRequest.class));
 
         mockMvc.perform(post("/auth/signin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,21 +144,20 @@ public class AuthApiTest {
     @Test
     @DisplayName("signOut: 정상 요청 테스트 - 200 OK")
     @WithMockUser
-
     public void signOutTest() throws Exception {
-        mockMvc.perform(post("/auth/signout")
-                        .header("Authorization", "Bearer test-token")) // 헤더 추가
+
+        willDoNothing().given(authService).signout(any(HttpServletRequest.class));
+
+        mockMvc.perform(post("/auth/signout"))
                 .andExpect(status().isOk())
                 .andDo(print());
     }
 
     @Test
-    @DisplayName("signOut: 인증 헤더 누락 테스트 - 401 Unauthorized")
+    @DisplayName("signOut: 인증되지 않은 사용자 테스트 - 401 Unauthorized")
     public void signOutUnauthorizedTest() throws Exception {
-        // Authorization 헤더를 넣지 않고 요청 전송
-        mockMvc.perform(post("/auth/signout")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized())
+        mockMvc.perform(post("/auth/signout"))
+                .andExpect(status().isUnauthorized()) // SecurityConfig에 의해 401 발생
                 .andDo(print());
     }
 

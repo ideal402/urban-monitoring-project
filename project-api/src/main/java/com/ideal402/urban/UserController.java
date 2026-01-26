@@ -2,13 +2,16 @@ package com.ideal402.urban;
 
 import com.ideal402.urban.api.controller.UserApi;
 import com.ideal402.urban.api.dto.WithdrawUserRequest;
-import com.ideal402.urban.domain.entity.User;
+import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,24 +21,30 @@ public class UserController implements UserApi {
     private final UserService userService;
 
 
-    @Override
-    public ResponseEntity<Void> setAlarms(Integer regionId) {
+    private final HttpServletRequest httpRequest;
+
+    private String getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        User user = getCurrentUser();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails userDetails) {
+            return userDetails.getUsername(); // 이메일 반환
+        }
+        throw new AuthenticationFailedException("로그인 정보가 유효하지 않습니다.");
+    }
 
-        userService.addAlarm(user, regionId);
+    @Override
+    public ResponseEntity<Void> setAlarms(@PathVariable Integer regionId) {
+        String email = getCurrentUserEmail();
 
+        userService.addAlarm(email, regionId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Override
     public ResponseEntity<Void> deleteAlarms(Integer regionId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = getCurrentUserEmail();
 
-        User user = getCurrentUser();
-
-        userService.deleteAlarm(user, regionId);
+        userService.deleteAlarm(email, regionId);
 
         return ResponseEntity.noContent().build();
     }
@@ -43,19 +52,12 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<Void> withdrawUser(WithdrawUserRequest  withdrawUserRequest) {
 
-        User user = getCurrentUser();
+        String email = getCurrentUserEmail();
         String password = withdrawUserRequest.getPassword();
 
-        userService.withdrawUser(user, password);
-
-        //현재 스레드의 인증정보 제거
-        SecurityContextHolder.clearContext();
+        userService.withdrawUser(email, password, httpRequest);
 
         return ResponseEntity.noContent().build();
     }
 
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return (User) authentication.getPrincipal();
-    }
 }
