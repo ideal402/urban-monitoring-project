@@ -19,7 +19,7 @@ public class SeoulApiRunner implements CommandLineRunner {
         log.info("============= [서울시 API 데이터 수집 시작] =============");
 
         try {
-            SeoulRealTimeDataResponse response = seoulApiClient.getSeoulData();
+            SeoulRealTimeDataResponse response = seoulApiClient.getSeoulData("동대문 관광특구");
 
             // 데이터 확인
             if (response != null && response.data() != null) {

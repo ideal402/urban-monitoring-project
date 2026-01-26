@@ -1,11 +1,12 @@
 package com.ideal402.urban.service;
 
-import com.ideal402.urban.api.dto.AuthResponse;
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
+import com.ideal402.urban.common.AuthenticationFailedException;
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.repository.UserRepository;
-import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,12 +14,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,13 +39,13 @@ public class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtTokenProvider jwtTokenProvider;
+    private AuthenticationManager authenticationManager;
 
     @Mock
-    private RedisTemplate<String, String> redisTemplate;
+    private HttpServletRequest httpRequest;
 
     @Mock
-    private ValueOperations<String, String> valueOperations;
+    private HttpSession httpSession;
 
     @Test
     @DisplayName("signUp: 성공")
@@ -54,10 +55,10 @@ public class AuthServiceTest {
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(false);
         given(passwordEncoder.encode(request.getPassword())).willReturn("encodedPw");
-        given(jwtTokenProvider.createToken(request.getEmail())).willReturn("test-token");
+        given(httpRequest.getSession(true)).willReturn(httpSession);
 
         //when
-        AuthResponse response = authService.signup(request);
+        authService.signup(request, httpRequest);
 
         //then
         // 1. 넘겨진 User 객체를 포획
@@ -69,10 +70,6 @@ public class AuthServiceTest {
         assertThat(user.getPasswordHash()).isEqualTo("encodedPw");
         assertThat(user.getUsername()).isEqualTo(request.getUsername());
         assertThat(user.getEmail()).isEqualTo(request.getEmail());
-
-        // 3. 반환값 검증 (AssertJ 적용)
-        assertThat(response.getAccessToken()).isEqualTo("test-token");
-        assertThat(response.getTokenType()).isEqualTo("Bearer");
     }
 
     @Test
@@ -84,118 +81,82 @@ public class AuthServiceTest {
         given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
 
         //when & then (AssertJ 적용)
-        assertThatThrownBy(() -> authService.signup(request))
-                .isInstanceOf(IllegalArgumentException.class);
-        // .hasMessage("이미 사용중인 이메일입니다."); // 필요시 메시지 검증 추가 가능
+        assertThatThrownBy(() -> authService.signup(request, httpRequest))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("이미 사용중인 이메일입니다.");
 
         verify(userRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("signIn: 성공")
-    public void signIn_Success_ReturnToken() throws Exception {
+    public void signIn_Success_SessionCreated() throws Exception {
         //given
         SigninRequest request = new SigninRequest("email", "Password");
-        User mockUser = new User("email", "Password", "User");
 
-        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
-        given(passwordEncoder.matches(request.getPassword(), mockUser.getPasswordHash())).willReturn(true);
-        given(jwtTokenProvider.createToken(request.getEmail())).willReturn("test-token");
+
+        Authentication mockAuthentication = mock(Authentication.class);
+
+        given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .willReturn(mockAuthentication);
+        given(httpRequest.getSession(true)).willReturn(httpSession);
+
 
         //when
-        AuthResponse response = authService.signin(request);
+        authService.signin(request, httpRequest);
 
-        //then (AssertJ 적용)
-        assertThat(response).isNotNull();
-        assertThat(response.getAccessToken()).isEqualTo("test-token");
+        //then
+        // 1. 인증 매니저가 호출되었는지 검증
+        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
 
-        verify(jwtTokenProvider, times(1)).createToken(request.getEmail());
+        // 2. 세션에 Security Context가 저장되었는지 검증 (가장 중요 ⭐)
+        verify(httpSession, times(1)).setAttribute(
+                eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
+                any()
+        );
     }
 
     @Test
-    @DisplayName("signIn: 실패 - 사용자를 찾지 못함")
+    @DisplayName("signIn: 실패 - 비밀번호 불일치 등 인증 실패")
     public void signInTest_Fail_UserNotFound() {
         //given
         SigninRequest request = new SigninRequest("email", "Password");
 
-        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.empty());
+        given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .willThrow(new BadCredentialsException("Bad credentials"));
 
-        //when & then (AssertJ 적용)
-        assertThatThrownBy(() -> authService.signin(request))
-                .isInstanceOf(RuntimeException.class);
-        // .hasMessage("유저를 찾을 수 없습니다."); // 메시지 검증 추천
+        //when & then
+        // AuthService가 이를 잡아서 AuthenticationFailedException으로 바꿔 던지는지 확인
+        assertThatThrownBy(() -> authService.signin(request, httpRequest))
+                .isInstanceOf(AuthenticationFailedException.class)
+                .hasMessageContaining("아이디 또는 비밀번호가 일치하지 않습니다.");
 
-        verify(passwordEncoder, never()).matches(any(), any());
+        // 세션 생성 로직은 실행되지 않아야 함
+        verify(httpRequest, never()).getSession(true);
     }
 
-    @Test
-    @DisplayName("signIn: 실패 - 비밀번호 불일치")
-    public void signInTest_Fail_WrongPassword() {
-        //given
-        SigninRequest request = new SigninRequest("email", "wrongPassword");
-        User mockUser = new User("email", "Password", "User");
-
-        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
-        given(passwordEncoder.matches(request.getPassword(), mockUser.getPasswordHash())).willReturn(false);
-
-        //when & then (AssertJ 적용)
-        assertThatThrownBy(() -> authService.signin(request))
-                .isInstanceOf(IllegalArgumentException.class);
-        // .hasMessage("비밀번호가 일치하지 않습니다."); // 메시지 검증 추천
-
-        verify(jwtTokenProvider, never()).createToken(request.getEmail());
-    }
 
     @Test
-    @DisplayName("signOut: 성공 - redis 블랙리스트 등록")
+    @DisplayName("signOut: 성공 - 세션 무효화(invalidate) 호출 확인")
     public void signOut_Success_returnVoid() throws Exception {
         //given
-        String rawToken = "pure-test-token";
-        String headerToken = "Bearer " + rawToken;
-        Long expiration = 3600000L;
-
-        given(jwtTokenProvider.validateToken(rawToken)).willReturn(true);
-        given(jwtTokenProvider.getExpiration(rawToken)).willReturn(expiration);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(httpRequest.getSession(false)).willReturn(httpSession);
 
         //when
-        authService.signout(headerToken);
+        authService.signout(httpRequest);
 
         //then (반환값이 void이므로 verify로 동작 검증)
-        verify(valueOperations, times(1)).set(rawToken, "logout", expiration, TimeUnit.MILLISECONDS);
+        verify(httpSession, times(1)).invalidate();
     }
 
-    @Test
-    @DisplayName("signOut: 성공 - Bearer 접두사가 없는 토큰이 와도 처리")
-    void signOut_Success_no_bearer_prefix() throws Exception {
-        //given
-        String rawToken = "pure-test-token";
-        Long expiration = 3600000L;
-
-        given(jwtTokenProvider.validateToken(rawToken)).willReturn(true);
-        given(jwtTokenProvider.getExpiration(rawToken)).willReturn(expiration);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-
-        //when
-        authService.signout(rawToken);
-
-        //then
-        verify(valueOperations, times(1)).set(rawToken, "logout", expiration, TimeUnit.MILLISECONDS);
-    }
 
     @Test
-    @DisplayName("signOut: 실패 - 유효하지 않은 토큰")
-    public void signOut_Fail_InvalidToken() throws Exception {
+    @DisplayName("signOut: 세션이 이미 없는 경우에도 에러 없이 종료")
+    public void signOut_Success_NoSession() throws Exception {
         //given
-        String rawToken = "invalid-token";
-        String headerToken = "Bearer " + rawToken;
-
-        given(jwtTokenProvider.validateToken(rawToken)).willReturn(false);
+        given(httpRequest.getSession(false)).willReturn(null);
 
         //when & then (AssertJ 적용)
-        assertThatThrownBy(() -> authService.signout(headerToken))
-                .isInstanceOf(IllegalArgumentException.class);
-
-        verify(redisTemplate, never()).opsForValue();
+        authService.signout(httpRequest);
     }
 }

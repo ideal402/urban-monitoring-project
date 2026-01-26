@@ -1,3 +1,0 @@
-jwt:
-  secret: "ThisIsASecretKeyForMyAwesomeProjectSeoulMapService2026"
-  expiration-time: 3600000

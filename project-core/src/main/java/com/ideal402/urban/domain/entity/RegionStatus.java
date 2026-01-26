@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +12,9 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Getter
-@Table(name = "region_status")
+@Table(name = "region_status", indexes = {
+        @Index(name = "idx_measurement_time", columnList = "measurement_time")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RegionStatus {
 
@@ -19,8 +22,9 @@ public class RegionStatus {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Integer regionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "region_id", nullable = false)
+    private Region region;
 
     private Integer congestionLevel;
     private Integer weatherCode;
@@ -28,13 +32,14 @@ public class RegionStatus {
 
     private OffsetDateTime measurementTime;
 
-    public RegionStatus(Integer regionId,
+    @Builder
+    public RegionStatus(Region region,
                         Integer congestionLevel,
                         Integer weatherCode,
                         Integer airQualityLevel,
                         OffsetDateTime measurementTime
     ) {
-        this.regionId = regionId;
+        this.region = region;
         this.congestionLevel = congestionLevel;
         this.weatherCode = weatherCode;
         this.airQualityLevel = airQualityLevel;

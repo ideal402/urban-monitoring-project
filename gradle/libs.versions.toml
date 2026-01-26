@@ -7,14 +7,15 @@ lombok = "1.18.36"
 openapi = "7.10.0"
 hibernateSpatial = "6.4.1.Final"
 postgresql = "42.7.2"
-
+opencsv = "5.9"
 swaggerAnnotations = "2.2.20"
 jacksonNullable = "0.2.6"
 junitPlatform = "1.11.4"
 jakartaAnnotation = "2.1.1"
 jakartaValidation = "3.0.2"
 jakartaServlet = "6.0.0"
-jjwt = "0.12.6"
+springSession = "3.2.1"
+commons-io = "2.11.0"
 
 [libraries]
 # Spring boot Starters
@@ -26,13 +27,11 @@ spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-
 spring-boot-starter-security = {group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "springBoot"}
 spring-boot-starter-actuator = {group ="org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "springBoot"}
 
+# 세션
+spring-session-data-redis = { group = "org.springframework.session", name = "spring-session-data-redis", version.ref = "springSession" }
+
 # 보안 테스트
 spring-security-test = {group = "org.springframework.security", name = "spring-security-test"}
-
-# jwt token
-jjwt-api = { group = "io.jsonwebtoken", name = "jjwt-api", version.ref = "jjwt" }
-jjwt-impl = { group = "io.jsonwebtoken", name = "jjwt-impl", version.ref = "jjwt" }
-jjwt-jackson = { group = "io.jsonwebtoken", name = "jjwt-jackson", version.ref = "jjwt"}
 
 # DB 관련
 h2 = { group = "com.h2database", name = "h2", version = "2.2.224" }
@@ -56,6 +55,9 @@ jakarta-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api",
 spring-boot-gradle-plugin = { group = "org.springframework.boot", name = "spring-boot-gradle-plugin", version.ref = "springBoot" }
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
+
+opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
+commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
