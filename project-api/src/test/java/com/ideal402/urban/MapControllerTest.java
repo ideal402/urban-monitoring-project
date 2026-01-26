@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MapController.class)
 @Import({GlobalExceptionHandler.class, SecurityConfig.class})
-public class MapApiTest {
+public class MapControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
