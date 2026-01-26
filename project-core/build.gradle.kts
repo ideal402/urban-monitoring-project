@@ -23,4 +23,5 @@ dependencies{
     implementation(libs.commons.io)
 
     implementation(project(":project-interface"))
+    implementation(project(":project-external"))
 }
