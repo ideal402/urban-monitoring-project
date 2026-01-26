@@ -17,5 +17,9 @@ dependencies{
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.security)
 
+    //etc
+    implementation(libs.opencsv)
+    implementation(libs.lombok)
+
     implementation(project(":project-interface"))
 }

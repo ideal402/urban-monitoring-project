@@ -7,7 +7,7 @@ lombok = "1.18.36"
 openapi = "7.10.0"
 hibernateSpatial = "6.4.1.Final"
 postgresql = "42.7.2"
-
+opencsv = "5.9"
 swaggerAnnotations = "2.2.20"
 jacksonNullable = "0.2.6"
 junitPlatform = "1.11.4"
@@ -54,6 +54,8 @@ jakarta-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api",
 spring-boot-gradle-plugin = { group = "org.springframework.boot", name = "spring-boot-gradle-plugin", version.ref = "springBoot" }
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
+
+opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

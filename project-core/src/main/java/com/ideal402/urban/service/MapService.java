@@ -31,9 +31,25 @@ public class MapService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<MapInfo> getRegionSummary(Long regionId) {
+        // region_id를 기준으로 가장 최근에 생성된 1건 조회
+        return regionStatusRepository.findFirstByRegionIdOrderByMeasurementTimeDesc(regionId)
+                .map(this::convertToMapInfo)
+                .map(info -> List.of(info)) // 단건을 리스트로 변환 (기존 리턴 타입 유지)
+                .orElse(new ArrayList<>());
+    }
+
+
+
     private MapInfo convertToMapInfo(RegionStatus entity) {
         MapInfo info = new MapInfo();
-        info.setRegionId(entity.getRegionId());
+
+        if (entity.getRegion() != null) {
+            info.setRegionId(entity.getRegion().getId().intValue());
+            // 필요한 경우 info.setAreaName(entity.getRegion().getAreaName()) 등 추가 가능
+        }
+
         info.setCongestionLevel(
                 MapInfo.CongestionLevelEnum.fromValue(entity.getCongestionLevel())
         );
