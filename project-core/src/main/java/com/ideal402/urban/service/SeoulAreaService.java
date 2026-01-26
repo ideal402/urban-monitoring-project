@@ -6,6 +6,7 @@ import com.ideal402.urban.service.dto.SeoulAreaCsvDto;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.BOMInputStream;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
@@ -40,7 +41,7 @@ public class SeoulAreaService {
             Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv");
 
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                    new InputStreamReader(new BOMInputStream(resource.getInputStream()), StandardCharsets.UTF_8))) {
 
                 // 3. CSV 파싱 (SeoulAreaCsvDto 리스트로 변환)
                 List<SeoulAreaCsvDto> csvDtos = new CsvToBeanBuilder<SeoulAreaCsvDto>(reader)
@@ -51,6 +52,7 @@ public class SeoulAreaService {
 
                 // 4. DTO를 Region 엔티티 리스트로 변환
                 List<Region> regions = csvDtos.stream()
+                        .filter(dto -> dto.getAreaCode() != null && !dto.getAreaCode().isBlank()) // 핵심: 빈 값 필터링
                         .map(dto -> Region.builder()
                                 .areaCode(dto.getAreaCode())
                                 .areaName(dto.getAreaName())

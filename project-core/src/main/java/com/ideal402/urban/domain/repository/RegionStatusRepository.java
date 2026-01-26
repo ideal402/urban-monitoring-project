@@ -10,8 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface RegionStatusRepository extends JpaRepository<RegionStatus, Long> {
-    @Query("SELECT r FROM RegionStatus r WHERE r.measurementTime = " +
-            "(SELECT MAX(r2.measurementTime) FROM RegionStatus r2 WHERE r2.regionId = r.regionId)")
+    @Query("SELECT rs FROM RegionStatus rs " +
+            "WHERE rs.measurementTime IN " +
+            "(SELECT MAX(rs2.measurementTime) FROM RegionStatus rs2 GROUP BY rs2.region)")
     List<RegionStatus> findLatestStatusOfAllRegions();
 
     Optional<RegionStatus> findFirstByRegionIdOrderByMeasurementTimeDesc(Long regionId);

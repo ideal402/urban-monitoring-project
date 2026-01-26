@@ -15,6 +15,7 @@ jakartaAnnotation = "2.1.1"
 jakartaValidation = "3.0.2"
 jakartaServlet = "6.0.0"
 springSession = "3.2.1"
+commons-io = "2.11.0"
 
 [libraries]
 # Spring boot Starters
@@ -56,6 +57,7 @@ kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-p
 
 
 opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
+commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
