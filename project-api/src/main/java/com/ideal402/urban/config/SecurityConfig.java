@@ -1,8 +1,6 @@
 package com.ideal402.urban.config;
 
 import com.ideal402.urban.domain.repository.UserRepository;
-import com.ideal402.urban.global.security.filter.JwtAuthenticationFilter;
-import com.ideal402.urban.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +21,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
     private final UserRepository userRepository;
 
@@ -53,12 +50,8 @@ public class SecurityConfig {
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                )
-
-                .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate, userRepository),
-                        UsernamePasswordAuthenticationFilter.class
                 );
+
                 return http.build();
     }
 }

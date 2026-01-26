@@ -18,7 +18,7 @@ services:
       - ./db_data:/var/lib/postgresql/data # 컨테이너가 내려가도 데이터가 사라지지 않게 로컬에 저장
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U user -d seoulmap" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,7 +27,7 @@ services:
     image: redis:alpine
     container_name: seoul-map-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -49,7 +49,7 @@ services:
     environment:
       # 컨테이너 내부 통신을 위한 설정 재정의
       # 'localhost' 대신 서비스 명인 'db'를 호스트로 사용해야 함
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/seoulmap
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
@@ -64,6 +64,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       # 만료 시간 설정
       JWT_EXPIRATION_TIME: 3600000
+
+      #세션 저장소 설정
+      SPRING_SESSION_STORE_TYPE: redis
 
       #Redis 설정
       SPRING_DATA_REDIS_HOST: redis
