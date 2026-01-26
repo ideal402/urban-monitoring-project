@@ -5,7 +5,6 @@ import com.ideal402.urban.api.dto.WithdrawUserRequest;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.common.ResourceNotFoundException;
 import com.ideal402.urban.config.SecurityConfig;
-import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,17 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.willThrow;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -35,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(UserController.class)
 @Import({GlobalExceptionHandler.class, SecurityConfig.class})
-public class UserApiTest {
+public class UserControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
