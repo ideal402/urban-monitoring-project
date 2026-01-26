@@ -1,28 +1,32 @@
-#spring:
-#  datasource:
-#    url: jdbc:h2:mem:testdb
-#    driver-class-name: org.h2.Driver
-#    username: ideal
-#    password:
-#
-#  h2:
-#    console:
-#      enabled: true
-#      path: /h2-console
-#
-#  jpa:
-#    defer-datasource-initialization: true # [핵심] 테이블 생성 후 data.sql 실행하도록 지연시킴
-#
-#    hibernate:
-#      # 애플리케이션 로딩 시 @Entity를 보고 테이블 자동 생성
-#      ddl-auto: create
-#
-#    properties:
-#      hibernate:
-#        format_sql: true # 로그에 찍히는 SQL 포맷팅
-#
-#    show-sql: true # 실행되는 SQL을 콘솔 로그에 출력
-#
-#  sql:
-#    init:
-#      mode: always
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/seoulmap
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update # 개발 초기에는 update, 운영 시에는 validate 또는 none 권장
+    properties:
+      hibernate:
+        format_sql: true # 실행되는 SQL을 보기 좋게 정렬
+        show_sql: true   # 실행되는 SQL을 콘솔에 출력
+
+server:
+  port: 8081
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-time: 86400000
+  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health # /actuator/health 엔드포인트 활성화
+  endpoint:
+    health:
+      show-details: always # DB 상태 등 상세 정보 포함 (보안상 운영 환경에서는 never 또는 authorized 권장)
