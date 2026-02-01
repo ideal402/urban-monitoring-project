@@ -20,15 +20,18 @@ public class SeoulApiClient {
     private String apiKey;
     String endpoint =  "/" + apiKey + "/json/citydata/1/5/광화문·덕수궁";
 
-    // 데이터 요청
-    public SeoulRealTimeDataResponse getSeoulData(){
+    /**
+     * 특정 지역명을 파라미터로 받아 실시간 데이터를 요청합니다.
+     * @param areaName DB(Region 테이블)에서 조회한 지역명 (예: "강남역", "광화문·덕수궁")
+     */
+    public SeoulRealTimeDataResponse getSeoulData(String areaName){
         String placeName = "광화문·덕수궁";
 
         String path = "/%s/json/citydata/1/5/%s".formatted(apiKey, placeName);
 
         // 실제 호출 및 반환
         return restClient.get()
-                .uri(path)
+                .uri("/{apiKey}/json/citydata/1/5/{areaName}", apiKey, areaName)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .body(SeoulRealTimeDataResponse.class);
