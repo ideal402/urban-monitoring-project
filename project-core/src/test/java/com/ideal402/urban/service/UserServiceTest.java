@@ -2,6 +2,8 @@ package com.ideal402.urban.service;
 
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,15 +37,24 @@ public class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private HttpServletRequest httpRequest;
+
+    @Mock
+    private HttpSession httpSession;
+
     @Test
     @DisplayName("addAlarm: 성공")
     void addAlarm_ValidRegionId_AddUserAlarmRow() throws Exception {
         //given
-        User user = new User("test","test@email","password");
+        String email = "test@email.com";
+        User user = new User("test",email,"password");
         Integer regionId = 1;
 
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+
         //when
-        userService.addAlarm(user, regionId);
+        userService.addAlarm(email, regionId);
 
         //then
         then(userRepository).should(times(1)).save(user);
@@ -55,10 +66,10 @@ public class UserServiceTest {
     @Test
     @DisplayName("addAlarm: 실패 - 존재하지 않는 지역")
     void addAlarm_InvalidRegionId_ThrowIllegalArgument() throws Exception {
-        User user = new User("test","test@email","password");
+        String email = "test@email.com";
         Integer regionId = 30;
 
-        assertThatThrownBy(() -> userService.addAlarm(user, regionId))
+        assertThatThrownBy(() -> userService.addAlarm(email, regionId))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -66,12 +77,15 @@ public class UserServiceTest {
     @DisplayName("addAlarm: 실패 - 이미 등록된 지역이면 저장하지 않음")
     void addAlarm_DuplicateRegionId_DoNothing() throws Exception {
         //given
-        User user = new User("test","test@email","password");
-        user.addAlarm(1);
+        String email = "test@email.com";
         Integer regionId = 1;
+        User user = new User("test", email, "password");
+        user.addAlarm(regionId);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
 
         //when
-        userService.addAlarm(user, regionId);
+        userService.addAlarm(email, regionId);
 
         //then
         then(userRepository).should(never()).save(user);
@@ -82,12 +96,15 @@ public class UserServiceTest {
     @DisplayName("deleteAlarm: 성공")
     void deleteAlarm_ValidRegionId_DeleteUserAlarmItem() throws Exception {
         //given
-        User user = new User("test","test@email","password");
+        String email = "test@email.com";
         Integer regionId = 1;
-        user.addAlarm(1);
+        User user = new User("test", email, "password");
+        user.addAlarm(regionId);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
 
         //when
-        userService.deleteAlarm(user, regionId);
+        userService.deleteAlarm(email, regionId);
 
         //then
         then(userRepository).should(times(1)).save(user);
@@ -97,10 +114,10 @@ public class UserServiceTest {
     @Test
     @DisplayName("deleteAlarm: 실패 - 존재하지 않는 지역")
     void deleteAlarm_InvalidRegionId_ThrowIllegalArgument() throws Exception {
-        User user = new User("test","test@email","password");
+        String email = "test@email.com";
         Integer regionId = 30;
 
-        assertThatThrownBy(()-> userService.deleteAlarm(user,regionId))
+        assertThatThrownBy(()-> userService.deleteAlarm(email,regionId))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -108,56 +125,54 @@ public class UserServiceTest {
     @DisplayName("withdrawUser: 성공")
     void withdrawUser_ValidPassword_DeleteUser() throws Exception {
         //given
-        User principal = new User("test","test@email","password");
-        ReflectionTestUtils.setField(principal, "id", 1L);
-
-        User foundUser = new User("found","test@email","password");
-        ReflectionTestUtils.setField(foundUser, "id", 1L);
-
-        given(userRepository.findById(principal.getId())).willReturn(Optional.of(foundUser));
+        String email = "test@email.com";
         String inputPassword = "password";
-        given(passwordEncoder.matches(inputPassword, foundUser.getPasswordHash())).willReturn(true);
+        User user = new User("test", email, "passwordHash");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches(inputPassword, user.getPasswordHash())).willReturn(true);
+        given(httpRequest.getSession(false)).willReturn(httpSession);
 
         //when
-        userService.withdrawUser(principal, inputPassword);
+        userService.withdrawUser(email, inputPassword, httpRequest);
 
         //then
-        then(userRepository).should(times(1)).delete(foundUser);
+        then(userRepository).should(times(1)).delete(user);
+        then(httpSession).should(times(1)).invalidate();
     }
 
     @Test
     @DisplayName("withdrawUser: 실패 - 비밀번호 불일지")
     void withdrawUser_InvalidPassword_AccessDeniedException() throws Exception {
-        User principal = new User("test","test@email","password");
-        ReflectionTestUtils.setField(principal, "id", 1L);
+        //given
+        String email = "test@email.com";
+        String inputPassword = "wrongPassword";
+        User user = new User("test", email, "passwordHash");
 
-        User foundUser = new User("found","test@email","password");
-        ReflectionTestUtils.setField(foundUser, "id", 1L);
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches(inputPassword, user.getPasswordHash())).willReturn(false);
 
-        given(userRepository.findById(principal.getId())).willReturn(Optional.of(foundUser));
-
-        String inputPassword = "password";
-        given(passwordEncoder.matches(inputPassword, foundUser.getPasswordHash())).willReturn(false);
-
-        //when&then
-        assertThatThrownBy(() -> userService.withdrawUser(principal, inputPassword))
+        //when & then
+        assertThatThrownBy(() -> userService.withdrawUser(email, inputPassword, httpRequest))
                 .isInstanceOf(AccessDeniedException.class);
 
         then(userRepository).should(never()).delete(any());
+        then(httpSession).should(never()).invalidate();
     }
 
     @Test
     @DisplayName("withdrawUser: 실패 - 존재하지 않는 유지")
     void withdrawUser_NonExistUser_RuntimeException() throws Exception {
-        User principal = new User("test","test@email","password");
-        ReflectionTestUtils.setField(principal, "id", 1L);
+        //given
+        String email = "unknown@email.com";
 
-        given(userRepository.findById(principal.getId())).willReturn(Optional.empty());
+        given(userRepository.findByEmail(email)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.withdrawUser(principal, "password"))
+        //when & then
+        assertThatThrownBy(() -> userService.withdrawUser(email, "password", httpRequest))
                 .isInstanceOf(RuntimeException.class);
 
-        then(passwordEncoder).should(never()).matches(any(),any());
+        then(passwordEncoder).should(never()).matches(any(), any());
         then(userRepository).should(never()).delete(any());
     }
 

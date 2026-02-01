@@ -1,14 +1,13 @@
 package com.ideal402.urban;
 
 import com.ideal402.urban.api.controller.AuthApi;
-import com.ideal402.urban.api.dto.AuthResponse;
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -16,29 +15,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController implements AuthApi {
 
     private final AuthService authService;
+    private final HttpServletRequest httpRequest;
 
     @Override
-    public ResponseEntity<AuthResponse> signup(SignupRequest request) throws Exception {
+    public ResponseEntity<Void> signup(SignupRequest request) throws Exception {
 
-        AuthResponse response = authService.signup(request);
+        authService.signup(request, httpRequest);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(response);
+                .build(); // Body 없음
     }
 
     @Override
-    public ResponseEntity<AuthResponse> signin(SigninRequest request) throws Exception {
+    public ResponseEntity<Void> signin(SigninRequest request) throws Exception {
 
-        AuthResponse response = authService.signin(request);
+        authService.signin(request, httpRequest);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok().build();
     }
 
     @Override
-    public ResponseEntity<Void> signout(@RequestHeader("Authorization") String accessToken) throws Exception {
+    public ResponseEntity<Void> signout() throws Exception {
 
-        authService.signout(accessToken);
+        authService.signout(httpRequest);
 
         return ResponseEntity.ok().build();
     }
