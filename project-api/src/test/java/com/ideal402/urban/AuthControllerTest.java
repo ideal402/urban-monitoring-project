@@ -8,13 +8,13 @@ import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,6 +41,8 @@ public class AuthControllerTest {
     @MockitoBean
     private UserRepository userRepository;
 
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @Test
     @DisplayName("signup: 정상 요청 테스트 - 201 Created")
@@ -51,7 +53,7 @@ public class AuthControllerTest {
                 .username("user")
                 .password("pass123");
 
-        willDoNothing().given(authService).signup(any(SignupRequest.class), any(HttpServletRequest.class));
+        willDoNothing().given(authService).signup(any(SignupRequest.class));
 
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -84,7 +86,7 @@ public class AuthControllerTest {
                 .password("pass123");
 
         willThrow(new IllegalStateException("이미 사용중인 이메일입니다."))
-                .given(authService).signup(any(SignupRequest.class), any(HttpServletRequest.class));
+                .given(authService).signup(any(SignupRequest.class));
 
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +102,7 @@ public class AuthControllerTest {
                 .email("test@test.com")
                 .password("pass123");
 
-        willDoNothing().given(authService).signin(any(SigninRequest.class), any(HttpServletRequest.class));
+        willDoNothing().given(authService).signin(any(SigninRequest.class));
 
         mockMvc.perform(post("/auth/signin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,7 +119,7 @@ public class AuthControllerTest {
                 .password("wrong-pass");
 
         willThrow(new AuthenticationFailedException("비밀번호가 일치하지 않습니다."))
-                .given(authService).signin(any(SigninRequest.class), any(HttpServletRequest.class));
+                .given(authService).signin(any(SigninRequest.class));
 
         mockMvc.perform(post("/auth/signin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -146,7 +148,7 @@ public class AuthControllerTest {
     @WithMockUser
     public void signOutTest() throws Exception {
 
-        willDoNothing().given(authService).signout(any(HttpServletRequest.class));
+        willDoNothing().given(authService).signout();
 
         mockMvc.perform(post("/auth/signout"))
                 .andExpect(status().isOk())

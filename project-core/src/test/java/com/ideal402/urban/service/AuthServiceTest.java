@@ -7,6 +7,8 @@ import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,8 +20,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,10 +47,25 @@ public class AuthServiceTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private HttpServletRequest httpRequest;
+    private HttpServletRequest httpRequest; // Mock Request 추가
 
     @Mock
     private HttpSession httpSession;
+
+    // ★ 중요: RequestContextHolder에 Mock Request를 심어주는 작업
+    @BeforeEach
+    public void setup() {
+        // 가짜 RequestAttributes 생성하여 Mock Request 연결
+        ServletRequestAttributes attributes = new ServletRequestAttributes(httpRequest);
+        RequestContextHolder.setRequestAttributes(attributes);
+    }
+
+    // ★ 중요: 테스트가 끝나면 ThreadLocal 정리 (다른 테스트 간섭 방지)
+    @AfterEach
+    public void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     @DisplayName("signUp: 성공")
@@ -55,20 +75,17 @@ public class AuthServiceTest {
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(false);
         given(passwordEncoder.encode(request.getPassword())).willReturn("encodedPw");
-        given(httpRequest.getSession(true)).willReturn(httpSession);
 
         //when
-        authService.signup(request, httpRequest);
+        authService.signup(request);
 
         //then
-        // 1. 넘겨진 User 객체를 포획
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository, times(1)).save(userCaptor.capture());
 
-        // 2. 포획된 정보를 기반으로 검증 (AssertJ 적용)
         User user = userCaptor.getValue();
         assertThat(user.getPasswordHash()).isEqualTo("encodedPw");
-        assertThat(user.getUsername()).isEqualTo(request.getUsername());
+        assertThat(user.getNickname()).isEqualTo(request.getUsername());
         assertThat(user.getEmail()).isEqualTo(request.getEmail());
     }
 
@@ -80,8 +97,8 @@ public class AuthServiceTest {
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
 
-        //when & then (AssertJ 적용)
-        assertThatThrownBy(() -> authService.signup(request, httpRequest))
+        //when & then
+        assertThatThrownBy(() -> authService.signup(request))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("이미 사용중인 이메일입니다.");
 
@@ -93,23 +110,23 @@ public class AuthServiceTest {
     public void signIn_Success_SessionCreated() throws Exception {
         //given
         SigninRequest request = new SigninRequest("email", "Password");
-
-
         Authentication mockAuthentication = mock(Authentication.class);
 
+        // 1. 인증 매니저가 성공하도록 설정
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .willReturn(mockAuthentication);
+
+        // 2. Mock Request가 세션을 요청하면 Mock Session을 반환하도록 설정
         given(httpRequest.getSession(true)).willReturn(httpSession);
 
-
         //when
-        authService.signin(request, httpRequest);
+        // 파라미터로 httpRequest를 넘기지 않음 (내부에서 RequestContextHolder 사용)
+        authService.signin(request);
 
         //then
-        // 1. 인증 매니저가 호출되었는지 검증
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
 
-        // 2. 세션에 Security Context가 저장되었는지 검증 (가장 중요 ⭐)
+        // 세션에 Security Context가 저장되었는지 검증
         verify(httpSession, times(1)).setAttribute(
                 eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
                 any()
@@ -126,37 +143,42 @@ public class AuthServiceTest {
                 .willThrow(new BadCredentialsException("Bad credentials"));
 
         //when & then
-        // AuthService가 이를 잡아서 AuthenticationFailedException으로 바꿔 던지는지 확인
-        assertThatThrownBy(() -> authService.signin(request, httpRequest))
+        assertThatThrownBy(() -> authService.signin(request))
                 .isInstanceOf(AuthenticationFailedException.class)
                 .hasMessageContaining("아이디 또는 비밀번호가 일치하지 않습니다.");
 
-        // 세션 생성 로직은 실행되지 않아야 함
+        // 실패했으므로 세션 생성(getSession)은 호출되지 않아야 함
         verify(httpRequest, never()).getSession(true);
     }
-
 
     @Test
     @DisplayName("signOut: 성공 - 세션 무효화(invalidate) 호출 확인")
     public void signOut_Success_returnVoid() throws Exception {
         //given
+        // 현재 세션이 존재한다고 설정
         given(httpRequest.getSession(false)).willReturn(httpSession);
 
         //when
-        authService.signout(httpRequest);
+        // 파라미터 없이 호출 (내부에서 RequestContextHolder 사용)
+        authService.signout();
 
-        //then (반환값이 void이므로 verify로 동작 검증)
+        //then
         verify(httpSession, times(1)).invalidate();
     }
-
 
     @Test
     @DisplayName("signOut: 세션이 이미 없는 경우에도 에러 없이 종료")
     public void signOut_Success_NoSession() throws Exception {
         //given
+        // 세션이 없다고(null) 설정
         given(httpRequest.getSession(false)).willReturn(null);
 
-        //when & then (AssertJ 적용)
-        authService.signout(httpRequest);
+        //when
+        authService.signout();
+
+        //then
+        // 에러가 발생하지 않아야 하며, invalidate는 호출되지 않아야 함
+        // (httpSession은 mock 객체이므로 호출 여부 검증 가능하지만,
+        // 여기서는 null을 리턴했으므로 httpSession 객체 자체에 접근하지 않음)
     }
 }
