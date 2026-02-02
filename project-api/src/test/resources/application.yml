@@ -23,3 +23,9 @@ spring:
 seoul:
   api:
     key: "TEST_API_KEY_1234"
+
+app:
+  scheduler:
+    cron:
+      daytime: "0 1 7-23 * * *"
+      nighttime: "0 1 0-6/2 * * *"

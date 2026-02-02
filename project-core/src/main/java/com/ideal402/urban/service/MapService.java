@@ -2,12 +2,9 @@ package com.ideal402.urban.service;
 
 import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
-import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.RegionStatusRepository;
-import com.ideal402.urban.external.seoul.client.SeoulApiClient;
-import com.ideal402.urban.external.seoul.dto.SeoulRealTimeDataResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -64,6 +60,7 @@ public class MapService {
         if (regionId == null) return List.of();
 
         Long id = regionId.longValue();
+
         if (!regionRepository.existsById(id)) {
             throw new IllegalArgumentException("해당 지역이 존재하지 않습니다. ID: " + id);
         }
