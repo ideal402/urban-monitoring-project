@@ -1,7 +1,12 @@
 package com.ideal402.urban.service;
 
+import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.domain.entity.Region;
+import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
+import com.ideal402.urban.domain.repository.RegionStatusRepository;
+import com.ideal402.urban.external.seoul.client.SeoulApiClient;
+import com.ideal402.urban.external.seoul.dto.SeoulRealTimeDataResponse;
 import com.ideal402.urban.service.dto.SeoulAreaCsvDto;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,33 +35,43 @@ import java.util.stream.Collectors;
 public class SeoulAreaService {
 
     private final RegionRepository regionRepository;
+    private final RegionStatusRepository regionStatusRepository;
     private final ResourceLoader resourceLoader;
+    private final SeoulApiClient seoulApiClient;
+
+    //region 데이터 메모리에 캐싱
+    private Map<String, Region> regionCache = new ConcurrentHashMap<>();
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void setupInitialData() {
-        // 데이터가 이미 있으면 중복 방지
-        if (regionRepository.count() > 0) {
-            log.info("Region master data already exists. Skipping initialization.");
-            return;
+        // 1. DB에 데이터가 없으면 CSV 로딩 수행
+        if (regionRepository.count() == 0) {
+            log.info("DB가 비어있습니다. CSV 데이터를 로드합니다.");
+            loadCsvAndSave();
+        } else {
+            log.info("기존 지역 데이터가 존재합니다. CSV 로딩을 건너뜁니다.");
         }
-        try {
-            // 2. 클래스패스에서 CSV 리소스 로드
-            Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv");
 
+        // 2. (CSV 로딩 여부와 상관없이) DB 데이터를 메모리 캐시에 적재
+        refreshRegionCache();
+        log.info("Region Cache Initialized: {} entries", regionCache.size());
+    }
+
+    private void loadCsvAndSave() {
+        try {
+            Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv");
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(new BOMInputStream(resource.getInputStream()), StandardCharsets.UTF_8))) {
 
-                // 3. CSV 파싱 (SeoulAreaCsvDto 리스트로 변환)
                 List<SeoulAreaCsvDto> csvDtos = new CsvToBeanBuilder<SeoulAreaCsvDto>(reader)
                         .withType(SeoulAreaCsvDto.class)
                         .withIgnoreEmptyLine(true)
                         .build()
                         .parse();
 
-                // 4. DTO를 Region 엔티티 리스트로 변환
                 List<Region> regions = csvDtos.stream()
-                        .filter(dto -> dto.getAreaCode() != null && !dto.getAreaCode().isBlank()) // 핵심: 빈 값 필터링
+                        .filter(dto -> dto.getAreaCode() != null && !dto.getAreaCode().isBlank())
                         .map(dto -> Region.builder()
                                 .areaCode(dto.getAreaCode())
                                 .areaName(dto.getAreaName())
@@ -60,13 +79,86 @@ public class SeoulAreaService {
                                 .build())
                         .collect(Collectors.toList());
 
-                // 5. 배치 저장 (하나씩 save하는 것보다 성능이 훨씬 좋음)
                 regionRepository.saveAll(regions);
-                log.info("Successfully initialized {} regions from CSV.", regions.size());
             }
         } catch (Exception e) {
-            log.error("CSV data initialization failed", e);
-            throw new RuntimeException("CSV 데이터를 읽는 중 오류가 발생했습니다: " + e.getMessage());
+            log.error("CSV 초기화 실패", e);
+            // 초기 데이터 로딩 실패는 치명적이므로 예외를 던져 서버 시작을 막거나 알림을 줘야 함
+            throw new RuntimeException("초기 데이터 로딩 실패", e);
+        }
+    }
+
+    private void refreshRegionCache() {
+        List<Region> allRegions = regionRepository.findAll();
+
+        this.regionCache = allRegions.stream()
+                .collect(Collectors.toConcurrentMap(
+                        Region::getAreaCode,
+                        region -> region,
+                        (existing, replacement) -> existing // 중복 시 기존 것 유지
+                ));
+    }
+
+    public void updateRegionStatus(String areaCd){
+        Region region = regionCache.get(areaCd);
+        if (region == null) {
+            log.warn("캐시에서 지역을 찾을 수 없습니다: {}", areaCd);
+            return;
+        }
+
+        SeoulRealTimeDataResponse response;
+        try {
+            response = seoulApiClient.getSeoulData(areaCd);
+        } catch (Exception e) {
+            log.error("API 호출 실패 - areaCd: {}", areaCd, e);
+            return;
+        }
+
+        RegionStatus newStatus = convertToEntity(region, response.data());
+
+        regionStatusRepository.save(newStatus);
+    }
+
+    private RegionStatus convertToEntity(Region region, SeoulRealTimeDataResponse.CityData data) {
+        var population = data.population().stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("인구 정보가 없습니다."));
+        var weather = data.weather().stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("날씨 정보가 없습니다."));
+
+        OffsetDateTime measuredTime = OffsetDateTime.now();
+
+        return RegionStatus.builder()
+                .region(region)
+                .congestionLevel(mapCongestionLevel(population.congestionLevel()))
+                .weatherCode(parseSafeInt(weather.temperature())) // 예시: 온도를 정수로 변환하여 저장
+                .airQualityLevel(mapAirQualityLevel(weather.pm10()))   // 미세먼지 농도 저장
+                .measurementTime(measuredTime)
+                .build();
+    }
+
+    private Integer mapCongestionLevel(String level) {
+        return switch (level) {
+            case "여유" -> 1;
+            case "보통" -> 2;
+            case "약간 붐빔" -> 3;
+            case "붐빔" -> 4;
+            default -> 0;
+        };
+    }
+
+    private Integer mapAirQualityLevel(String pm10Value) {
+        int pm10 = parseSafeInt(pm10Value);
+        if (pm10 <= 30) return 1;
+        if (pm10 <= 80) return 2;
+        if (pm10 <= 150) return 3;
+        return 4;
+    }
+
+    private Integer parseSafeInt(String value) {
+        try {
+            return (int) Double.parseDouble(value);
+        } catch (Exception e) {
+            return 0;
         }
     }
 }

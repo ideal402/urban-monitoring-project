@@ -16,4 +16,6 @@ public interface RegionStatusRepository extends JpaRepository<RegionStatus, Long
     List<RegionStatus> findLatestStatusOfAllRegions();
 
     Optional<RegionStatus> findFirstByRegionIdOrderByMeasurementTimeDesc(Long regionId);
+
+    List<RegionStatus> findTop20ByRegionIdOrderByMeasurementTimeDesc(Long regionId);
 }
