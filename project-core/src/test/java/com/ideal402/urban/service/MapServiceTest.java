@@ -32,7 +32,7 @@ class MapServiceTest {
 
     @Mock
     private RegionStatusRepository regionStatusRepository;
-    
+
     @InjectMocks
     private MapService mapService;
 

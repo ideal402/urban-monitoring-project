@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.BOMInputStream;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ public class SeoulAreaService {
     private Map<String, Region> regionCache = new ConcurrentHashMap<>();
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(1)
     @Transactional
     public void setupInitialData() {
         // 1. DB에 데이터가 없으면 CSV 로딩 수행
@@ -97,9 +99,11 @@ public class SeoulAreaService {
                         region -> region,
                         (existing, replacement) -> existing // 중복 시 기존 것 유지
                 ));
+
     }
 
     public void updateRegionStatus(String areaCd){
+
         Region region = regionCache.get(areaCd);
         if (region == null) {
             log.warn("캐시에서 지역을 찾을 수 없습니다: {}", areaCd);

@@ -5,6 +5,9 @@ import com.ideal402.urban.external.seoul.client.SeoulApiClient;
 import com.ideal402.urban.service.SeoulAreaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +23,13 @@ public class PopulationScheduler {
 
     // 인구밀집지역 AREA_CD 리스트 (DB나 설정파일에서 가져오는 것을 권장)
     private static final String TARGET_CATEGORY = "인구밀집지역";
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(2)
+    public void initJob() {
+        log.info("애플리케이션 시작 - 초기 데이터 갱신 실행");
+        runUpdate();
+    }
 
     @Scheduled(cron = "${app.scheduler.cron.daytime}") // 주간: 매시 1분
     public void daytimeJob() {
