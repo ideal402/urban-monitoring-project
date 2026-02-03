@@ -16,6 +16,7 @@ jakartaValidation = "3.0.2"
 jakartaServlet = "6.0.0"
 springSession = "3.2.1"
 commons-io = "2.11.0"
+awaitility = "4.2.2"
 
 [libraries]
 # Spring boot Starters
@@ -55,7 +56,7 @@ jakarta-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api",
 spring-boot-gradle-plugin = { group = "org.springframework.boot", name = "spring-boot-gradle-plugin", version.ref = "springBoot" }
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
-
+awaitility = { group = "org.awaitility", name = "awaitility", version.ref = "awaitility" }
 opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 

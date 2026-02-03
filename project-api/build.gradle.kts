@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     runtimeOnly(libs.postgresql)
     testRuntimeOnly(libs.h2)
+    testImplementation(libs.awaitility)
     implementation(project(":project-interface"))
     implementation(project(":project-core"))
     implementation(project(":project-external"))

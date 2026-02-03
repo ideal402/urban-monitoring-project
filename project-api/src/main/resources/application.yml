@@ -36,3 +36,9 @@ management:
   endpoint:
     health:
       show-details: always # DB 상태 등 상세 정보 포함 (보안상 운영 환경에서는 never 또는 authorized 권장)
+
+app:
+  scheduler:
+    cron:
+      daytime: "0 1 7-23 * * *"   # 운영 환경: 7~23시 매시 1분
+      nighttime: "0 1 0-6/2 * * *" # 운영 환경: 0~6시 2시간격
