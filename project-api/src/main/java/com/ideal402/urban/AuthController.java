@@ -1,6 +1,5 @@
 package com.ideal402.urban;
 
-import com.ideal402.urban.api.controller.AuthApi;
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.service.AuthService;

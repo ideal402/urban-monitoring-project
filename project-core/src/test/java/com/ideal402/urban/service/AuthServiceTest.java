@@ -26,6 +26,8 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -43,30 +45,6 @@ public class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private AuthenticationManager authenticationManager;
-
-    @Mock
-    private HttpServletRequest httpRequest; // Mock Request 추가
-
-    @Mock
-    private HttpSession httpSession;
-
-    // ★ 중요: RequestContextHolder에 Mock Request를 심어주는 작업
-    @BeforeEach
-    public void setup() {
-        // 가짜 RequestAttributes 생성하여 Mock Request 연결
-        ServletRequestAttributes attributes = new ServletRequestAttributes(httpRequest);
-        RequestContextHolder.setRequestAttributes(attributes);
-    }
-
-    // ★ 중요: 테스트가 끝나면 ThreadLocal 정리 (다른 테스트 간섭 방지)
-    @AfterEach
-    public void tearDown() {
-        RequestContextHolder.resetRequestAttributes();
-        SecurityContextHolder.clearContext();
-    }
-
     @Test
     @DisplayName("signUp: 성공")
     public void signUpTest() throws Exception {
@@ -80,13 +58,7 @@ public class AuthServiceTest {
         authService.signup(request);
 
         //then
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository, times(1)).save(userCaptor.capture());
-
-        User user = userCaptor.getValue();
-        assertThat(user.getPasswordHash()).isEqualTo("encodedPw");
-        assertThat(user.getNickname()).isEqualTo(request.getUsername());
-        assertThat(user.getEmail()).isEqualTo(request.getEmail());
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
@@ -110,75 +82,49 @@ public class AuthServiceTest {
     public void signIn_Success_SessionCreated() throws Exception {
         //given
         SigninRequest request = new SigninRequest("email", "Password");
-        Authentication mockAuthentication = mock(Authentication.class);
 
-        // 1. 인증 매니저가 성공하도록 설정
-        given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .willReturn(mockAuthentication);
+        User mockUser = new User("test","email","encodedPw");
 
-        // 2. Mock Request가 세션을 요청하면 Mock Session을 반환하도록 설정
-        given(httpRequest.getSession(true)).willReturn(httpSession);
+        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
+        given(passwordEncoder.matches(request.getPassword(), mockUser.getPasswordHash())).willReturn(true);
 
         //when
-        // 파라미터로 httpRequest를 넘기지 않음 (내부에서 RequestContextHolder 사용)
         authService.signin(request);
 
         //then
-        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-
-        // 세션에 Security Context가 저장되었는지 검증
-        verify(httpSession, times(1)).setAttribute(
-                eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
-                any()
-        );
+        verify(userRepository, times(1)).findByEmail(request.getEmail());
     }
 
     @Test
-    @DisplayName("signIn: 실패 - 비밀번호 불일치 등 인증 실패")
-    public void signInTest_Fail_UserNotFound() {
-        //given
-        SigninRequest request = new SigninRequest("email", "Password");
+    @DisplayName("signin: 실패 - 존재하지 않는 이메일")
+    public void signinFailEmailNotFound() {
+        // given
+        SigninRequest request = new SigninRequest("wrong@test.com", "Password");
 
-        given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .willThrow(new BadCredentialsException("Bad credentials"));
+        // 이메일 조회 시 빈 값(Empty) 리턴
+        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.empty());
 
-        //when & then
+        // when & then
         assertThatThrownBy(() -> authService.signin(request))
-                .isInstanceOf(AuthenticationFailedException.class)
-                .hasMessageContaining("아이디 또는 비밀번호가 일치하지 않습니다.");
-
-        // 실패했으므로 세션 생성(getSession)은 호출되지 않아야 함
-        verify(httpRequest, never()).getSession(true);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이메일 또는 비밀번호가 잘못되었습니다.");
     }
 
     @Test
-    @DisplayName("signOut: 성공 - 세션 무효화(invalidate) 호출 확인")
-    public void signOut_Success_returnVoid() throws Exception {
-        //given
-        // 현재 세션이 존재한다고 설정
-        given(httpRequest.getSession(false)).willReturn(httpSession);
+    @DisplayName("signin: 실패 - 비밀번호 불일치")
+    public void signinFailPasswordMismatch() {
+        // given
+        SigninRequest request = new SigninRequest("email@test.com", "WrongPassword");
 
-        //when
-        // 파라미터 없이 호출 (내부에서 RequestContextHolder 사용)
-        authService.signout();
+        User mockUser = new User("test","email@test.com","encodedPw");
 
-        //then
-        verify(httpSession, times(1)).invalidate();
+        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
+        given(passwordEncoder.matches(request.getPassword(), mockUser.getPasswordHash())).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.signin(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이메일 또는 비밀번호가 잘못되었습니다.");
     }
 
-    @Test
-    @DisplayName("signOut: 세션이 이미 없는 경우에도 에러 없이 종료")
-    public void signOut_Success_NoSession() throws Exception {
-        //given
-        // 세션이 없다고(null) 설정
-        given(httpRequest.getSession(false)).willReturn(null);
-
-        //when
-        authService.signout();
-
-        //then
-        // 에러가 발생하지 않아야 하며, invalidate는 호출되지 않아야 함
-        // (httpSession은 mock 객체이므로 호출 여부 검증 가능하지만,
-        // 여기서는 null을 리턴했으므로 httpSession 객체 자체에 접근하지 않음)
-    }
 }

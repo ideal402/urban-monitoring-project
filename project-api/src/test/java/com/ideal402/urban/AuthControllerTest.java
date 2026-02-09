@@ -14,15 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
@@ -44,21 +47,22 @@ public class AuthControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+
     @Test
     @DisplayName("signup: 정상 요청 테스트 - 201 Created")
     public void signupTest() throws Exception{
-
-        SignupRequest request = new SignupRequest()
-                .email("test@test.com")
-                .username("user")
-                .password("pass123");
+        // Given
+        SignupRequest request = new SignupRequest("test@test.com", "user", "pass123");
 
         willDoNothing().given(authService).signup(any(SignupRequest.class));
+        willDoNothing().given(authService).signin(any(SigninRequest.class));
 
+        // When & Then
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
+                .andExpect(request().sessionAttribute("LOGIN_MEMBER", "test@test.com"))
                 .andDo(print());
     }
 
@@ -98,16 +102,17 @@ public class AuthControllerTest {
     @Test
     @DisplayName("signin: 정상 요청 테스트 - 200 OK")
     public void signinTest() throws Exception {
-        SigninRequest request = new SigninRequest()
-                .email("test@test.com")
-                .password("pass123");
+        // Given
+        SigninRequest request = new SigninRequest("test@test.com", "pass123");
 
         willDoNothing().given(authService).signin(any(SigninRequest.class));
 
+        // When & Then
         mockMvc.perform(post("/auth/signin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
+                .andExpect(request().sessionAttribute("LOGIN_MEMBER", "test@test.com"))
                 .andDo(print());
     }
 
@@ -148,11 +153,17 @@ public class AuthControllerTest {
     @WithMockUser
     public void signOutTest() throws Exception {
 
-        willDoNothing().given(authService).signout();
+        // Given: 이미 로그인된 상태를 시뮬레이션하기 위해 세션 생성
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("LOGIN_MEMBER_EMAIL", "test@test.com");
 
-        mockMvc.perform(post("/auth/signout"))
+        // When & Then
+        mockMvc.perform(post("/auth/signout")
+                        .session(session)) // [핵심] 가짜 세션을 요청에 주입
                 .andExpect(status().isOk())
                 .andDo(print());
+
+        assertTrue(session.isInvalid(), "세션이 무효화되어야 합니다.");
     }
 
     @Test
