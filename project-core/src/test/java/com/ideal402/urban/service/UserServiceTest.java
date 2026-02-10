@@ -1,6 +1,8 @@
 package com.ideal402.urban.service;
 
 import com.ideal402.urban.domain.entity.User;
+import com.ideal402.urban.domain.entity.UserAlarm;
+import com.ideal402.urban.domain.repository.UserAlarmRepository;
 import com.ideal402.urban.domain.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -35,13 +37,11 @@ public class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private UserAlarmRepository userAlarmRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private HttpServletRequest httpRequest;
-
-    @Mock
-    private HttpSession httpSession;
 
     @Test
     @DisplayName("addAlarm: 성공")
@@ -52,15 +52,13 @@ public class UserServiceTest {
         Integer regionId = 1;
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userAlarmRepository.existsByUserAndRegionId(user, regionId)).willReturn(false);
 
         //when
         userService.addAlarm(email, regionId);
 
         //then
-        then(userRepository).should(times(1)).save(user);
-
-        assertThat(user.getAlarms()).hasSize(1);
-        assertThat(user.getAlarms().getFirst().getRegionId()).isEqualTo(regionId);
+        then(userAlarmRepository).should(times(1)).save(any(UserAlarm.class));
     }
 
     @Test
@@ -74,22 +72,21 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("addAlarm: 실패 - 이미 등록된 지역이면 저장하지 않음")
-    void addAlarm_DuplicateRegionId_DoNothing() throws Exception {
+    @DisplayName("addAlarm: 성공(무시) - 이미 존재하는 알람이면 저장하지 않고 정상 종료")
+    void addAlarm_DuplicateRegionId_DoNothing() {
         //given
         String email = "test@email.com";
         Integer regionId = 1;
         User user = new User("test", email, "password");
-        user.addAlarm(regionId);
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userAlarmRepository.existsByUserAndRegionId(user, regionId)).willReturn(true);
 
         //when
         userService.addAlarm(email, regionId);
 
         //then
-        then(userRepository).should(never()).save(user);
-        assertThat(user.getAlarms()).hasSize(1);
+        then(userAlarmRepository).should(never()).save(any(UserAlarm.class));
     }
 
     @Test
@@ -99,16 +96,35 @@ public class UserServiceTest {
         String email = "test@email.com";
         Integer regionId = 1;
         User user = new User("test", email, "password");
-        user.addAlarm(regionId);
+        UserAlarm userAlarm = new UserAlarm(user, regionId);
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userAlarmRepository.findByUserAndRegionId(user, regionId)).willReturn(Optional.of(userAlarm));
 
         //when
         userService.deleteAlarm(email, regionId);
 
         //then
-        then(userRepository).should(times(1)).save(user);
-        assertThat(user.getAlarms()).isEmpty();
+        then(userAlarmRepository).should(times(1)).delete(userAlarm);
+    }
+
+    @Test
+    @DisplayName("deleteAlarm: 성공(무시) - 존재하지 않는 알람이면 삭제하지 않고 정상 종료")
+    void deleteAlarm_NotFoundAlarm_DoNothing() {
+        // given
+        String email = "test@email.com";
+        Integer regionId = 99; // 없는 지역 ID
+        User user = new User("test", email, "password");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userAlarmRepository.findByUserAndRegionId(user, regionId)).willReturn(Optional.empty()); // 없음
+
+        // when
+        userService.deleteAlarm(email, regionId);
+
+        // then
+        // 예외가 발생하지 않아야 하며, delete도 호출되지 않아야 함
+        then(userAlarmRepository).should(never()).delete(any(UserAlarm.class));
     }
 
     @Test
@@ -131,14 +147,13 @@ public class UserServiceTest {
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(passwordEncoder.matches(inputPassword, user.getPasswordHash())).willReturn(true);
-        given(httpRequest.getSession(false)).willReturn(httpSession);
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
 
         //when
-        userService.withdrawUser(email, inputPassword, httpRequest);
+        userService.withdrawUser(email, inputPassword);
 
         //then
         then(userRepository).should(times(1)).delete(user);
-        then(httpSession).should(times(1)).invalidate();
     }
 
     @Test
@@ -153,11 +168,10 @@ public class UserServiceTest {
         given(passwordEncoder.matches(inputPassword, user.getPasswordHash())).willReturn(false);
 
         //when & then
-        assertThatThrownBy(() -> userService.withdrawUser(email, inputPassword, httpRequest))
+        assertThatThrownBy(() -> userService.withdrawUser(email, inputPassword))
                 .isInstanceOf(AccessDeniedException.class);
 
         then(userRepository).should(never()).delete(any());
-        then(httpSession).should(never()).invalidate();
     }
 
     @Test
@@ -169,7 +183,7 @@ public class UserServiceTest {
         given(userRepository.findByEmail(email)).willReturn(Optional.empty());
 
         //when & then
-        assertThatThrownBy(() -> userService.withdrawUser(email, "password", httpRequest))
+        assertThatThrownBy(() -> userService.withdrawUser(email, "password"))
                 .isInstanceOf(RuntimeException.class);
 
         then(passwordEncoder).should(never()).matches(any(), any());
