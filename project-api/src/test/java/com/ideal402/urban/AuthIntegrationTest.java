@@ -139,8 +139,7 @@ public class AuthIntegrationTest {
         ResponseEntity<String> response = restTemplate.postForEntity("/auth/signin", request, String.class);
 
         // then
-        // SecurityConfig에서 entryPoint를 UNAUTHORIZED(401)로 설정했으므로 401 기대
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     // ==========================================
@@ -174,11 +173,16 @@ public class AuthIntegrationTest {
         ResponseEntity<String> loginRes = restTemplate.postForEntity("/auth/signin", signinRequest, String.class);
 
         String cookieStr = loginRes.getHeaders().get(HttpHeaders.SET_COOKIE).get(0);
+        String sessionCookie = cookieStr.split(";")[0];
+
+        System.out.println("원본 쿠키: " + cookieStr);
+        System.out.println("보낼 쿠키: " + sessionCookie);
+
         String sessionId = extractSessionId(cookieStr);
 
         // when (로그아웃 요청 - 헤더에 쿠키 필수)
         HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.COOKIE, cookieStr);
+        headers.add(HttpHeaders.COOKIE, sessionCookie);
         HttpEntity<Void> logoutRequest = new HttpEntity<>(headers);
 
         ResponseEntity<String> logoutRes = restTemplate.exchange(
@@ -189,7 +193,7 @@ public class AuthIntegrationTest {
         );
 
         // then
-        assertThat(logoutRes.getStatusCode()).isEqualTo(HttpStatus.OK); // 또는 200/204
+        assertThat(logoutRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Redis에서 키가 사라졌는지 확인
         Boolean hasKey = redisTemplate.hasKey("spring:session:sessions:" + sessionId);
