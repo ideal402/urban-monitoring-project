@@ -44,11 +44,13 @@ public class GlobalExceptionHandler {
 
     /**
      * 403 Forbidden
-     * 비밀번호 불일치, 권한없음
+     * 비밀번호 불일치
      */
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDenied(AccessDeniedException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+    public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(e.getMessage()); // 또는 "접근 권한이 없습니다." 등 커스텀 메시지
     }
 
     /**
@@ -68,6 +70,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalStateException(IllegalStateException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
+
+
 
     /**
      * 500 Internal Server Error
