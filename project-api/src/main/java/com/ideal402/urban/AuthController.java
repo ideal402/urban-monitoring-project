@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -79,7 +81,7 @@ public class AuthController{
     private void saveAuthenticationData(String email, HttpServletRequest request, HttpServletResponse response) {
 
         // 1. Authentication 토큰 생성: Principal(주체) 영역에 email 할당
-        Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
         // 2. 빈 SecurityContext 생성 및 Authentication 객체 설정
         SecurityContext context = SecurityContextHolder.createEmptyContext();

@@ -12,8 +12,8 @@ spring:
       ddl-auto: update # 개발 초기에는 update, 운영 시에는 validate 또는 none 권장
     properties:
       hibernate:
-        format_sql: true # 실행되는 SQL을 보기 좋게 정렬
-        show_sql: true   # 실행되는 SQL을 콘솔에 출력
+        format_sql: false
+        show_sql: false   
 
   data:
     redis:

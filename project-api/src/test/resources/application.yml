@@ -11,8 +11,9 @@ spring:
       ddl-auto: create-drop
     properties:
       hibernate:
-        format_sql: true
-        show_sql: true
+        format_sql: false
+        use_sql_comments: false
+
 
   sql:
     init:
@@ -27,3 +28,9 @@ app:
     cron:
       daytime: "0 1 7-23 * * *"
       nighttime: "0 1 0-6/2 * * *"
+
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG

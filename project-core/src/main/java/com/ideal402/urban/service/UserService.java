@@ -1,7 +1,9 @@
 package com.ideal402.urban.service;
 
+import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.entity.UserAlarm;
+import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.UserAlarmRepository;
 import com.ideal402.urban.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +17,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserAlarmRepository userAlarmRepository;
+    private final RegionRepository regionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public void addAlarm(String email, Integer regionId) {
 
-        if (regionId == null || regionId < 0) {
-            throw new IllegalArgumentException("Region Id can't be 0");
-        }
+        Region region = regionRepository.findById(regionId.longValue())
+                .orElseThrow(() -> new IllegalArgumentException("Region not found"));
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -37,9 +39,8 @@ public class UserService {
 
     public void deleteAlarm(String email, Integer regionId) {
 
-        if (regionId == null || regionId < 0 ) {
-            throw new IllegalArgumentException("Region Id can't be 0");
-        }
+        Region region = regionRepository.findById(regionId.longValue())
+                .orElseThrow(() -> new IllegalArgumentException("Region not found"));
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -57,7 +58,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("유저 정보가 없습니다."));
 
         if (!passwordEncoder.matches(inputPassword, user.getPasswordHash())) {
-            throw new org.springframework.security.access.AccessDeniedException("비밀번호가 일치하지 않습니다.");
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
         userAlarmRepository.deleteByUser(user);
