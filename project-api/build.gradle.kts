@@ -16,6 +16,7 @@ dependencies {
     runtimeOnly(libs.postgresql)
     testRuntimeOnly(libs.h2)
     testImplementation(libs.awaitility)
+    implementation(libs.lombok)
     implementation(project(":project-interface"))
     implementation(project(":project-core"))
     implementation(project(":project-external"))

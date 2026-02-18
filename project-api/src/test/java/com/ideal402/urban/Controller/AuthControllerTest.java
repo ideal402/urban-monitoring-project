@@ -1,6 +1,7 @@
-package com.ideal402.urban;
+package com.ideal402.urban.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ideal402.urban.AuthController;
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
 import com.ideal402.urban.common.AuthenticationFailedException;
@@ -17,9 +18,11 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
@@ -62,14 +65,14 @@ public class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(request().sessionAttribute("LOGIN_MEMBER", "test@test.com"))
+                // 스프링 시큐리티 컨텍스트가 세션에 정상적으로 저장되었는지 확인
+                .andExpect(request().sessionAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, notNullValue()))
                 .andDo(print());
     }
 
     @Test
     @DisplayName("signup: 필수항목 누락 테스트 - 400 Bad Request")
     public void signupBadRequestTest() throws Exception {
-        // 필수 항목인 email이 누락된 요청 DTO
         SignupRequest request = new SignupRequest()
                 .username("user")
                 .password("pass123");
@@ -77,7 +80,7 @@ public class AuthControllerTest {
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest()) // @Valid에 의해 400 반환
+                .andExpect(status().isBadRequest())
                 .andDo(print());
     }
 
@@ -112,7 +115,8 @@ public class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(request().sessionAttribute("LOGIN_MEMBER", "test@test.com"))
+                // 스프링 시큐리티 컨텍스트가 세션에 정상적으로 저장되었는지 확인
+                .andExpect(request().sessionAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, notNullValue()))
                 .andDo(print());
     }
 
@@ -136,11 +140,9 @@ public class AuthControllerTest {
     @Test
     @DisplayName("signin: 필수항목(이메일) 누락 테스트 - 400 Bad Request")
     public void signinBadRequestTest() throws Exception {
-        // 1. 이메일이 누락된 요청 객체 생성
         SigninRequest request = new SigninRequest()
                 .password("pass123");
 
-        // 2. 호출 및 400 에러 검증
         mockMvc.perform(post("/auth/signin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -150,19 +152,20 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("signOut: 정상 요청 테스트 - 200 OK")
-    @WithMockUser
+    @WithMockUser // 가짜 인증 사용자 주입
     public void signOutTest() throws Exception {
 
-        // Given: 이미 로그인된 상태를 시뮬레이션하기 위해 세션 생성
+        // Given: 컨트롤러에서 session.invalidate()를 호출하므로 세션 객체 자체는 필요함
         MockHttpSession session = new MockHttpSession();
-        session.setAttribute("LOGIN_MEMBER_EMAIL", "test@test.com");
+        // 더 이상 커스텀 속성("LOGIN_MEMBER_EMAIL")을 주입할 필요가 없음
 
         // When & Then
         mockMvc.perform(post("/auth/signout")
-                        .session(session)) // [핵심] 가짜 세션을 요청에 주입
+                        .session(session))
                 .andExpect(status().isOk())
                 .andDo(print());
 
+        // 세션 무효화 검증
         assertTrue(session.isInvalid(), "세션이 무효화되어야 합니다.");
     }
 
@@ -170,8 +173,7 @@ public class AuthControllerTest {
     @DisplayName("signOut: 인증되지 않은 사용자 테스트 - 401 Unauthorized")
     public void signOutUnauthorizedTest() throws Exception {
         mockMvc.perform(post("/auth/signout"))
-                .andExpect(status().isUnauthorized()) // SecurityConfig에 의해 401 발생
+                .andExpect(status().isUnauthorized())
                 .andDo(print());
     }
-
 }

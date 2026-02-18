@@ -49,6 +49,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/signout").authenticated()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/map/**").permitAll()
 

@@ -1,5 +1,6 @@
-package com.ideal402.urban;
+package com.ideal402.urban.Controller;
 
+import com.ideal402.urban.MapController;
 import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.common.GlobalExceptionHandler;

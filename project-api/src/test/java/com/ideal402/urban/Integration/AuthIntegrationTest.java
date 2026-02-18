@@ -1,4 +1,4 @@
-package com.ideal402.urban;
+package com.ideal402.urban.Integration;
 
 import com.ideal402.urban.api.dto.SigninRequest;
 import com.ideal402.urban.api.dto.SignupRequest;
@@ -46,7 +46,6 @@ public class AuthIntegrationTest {
             redisTemplate.delete(keys);
         }
     }
-
 
     private void signupHelper(String email, String password, String username) {
         SignupRequest request = new SignupRequest(email, password, username); // DTO 생성자 필요
