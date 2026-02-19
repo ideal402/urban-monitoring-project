@@ -47,17 +47,54 @@ public class SeoulAreaService {
     @Order(1)
     @Transactional
     public void setupInitialData() {
-        // 1. DB에 데이터가 없으면 CSV 로딩 수행
+        // 1. DB에 지역 데이터 자체가 아예 없는 경우 (최초 실행)
         if (regionRepository.count() == 0) {
-            log.info("DB가 비어있습니다. CSV 데이터를 로드합니다.");
+            log.info("DB가 비어있습니다. CSV 데이터를 전체 로드합니다.");
             loadCsvAndSave();
-        } else {
-            log.info("기존 지역 데이터가 존재합니다. CSV 로딩을 건너뜁니다.");
+        }
+        // 2. 지역 데이터는 있는데 좌표(latitude)가 비어있는 경우 (열만 추가된 현재 상황)
+        else {
+            long missingCoordsCount = regionRepository.findAll().stream()
+                    .filter(r -> r.getLatitude() == null)
+                    .count();
+
+            if (missingCoordsCount > 0) {
+                log.info("좌표 정보가 없는 지역 {}건을 발견했습니다. 좌표 업데이트를 진행합니다.", missingCoordsCount);
+                updateRegionCoordinatesFromCsv();
+            } else {
+                log.info("모든 지역에 좌표 데이터가 존재합니다. 마이그레이션을 건너뜁니다.");
+            }
         }
 
-        // 2. (CSV 로딩 여부와 상관없이) DB 데이터를 메모리 캐시에 적재
         refreshRegionCache();
         log.info("Region Cache Initialized: {} entries", regionCache.size());
+    }
+
+    // 새롭게 추가할 업데이트 전용 메서드
+    private void updateRegionCoordinatesFromCsv() {
+        try {
+            Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv"); // 좌표가 추가된 최종 CSV 파일명
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new BOMInputStream(resource.getInputStream()), StandardCharsets.UTF_8))) {
+
+                List<SeoulAreaCsvDto> csvDtos = new CsvToBeanBuilder<SeoulAreaCsvDto>(reader)
+                        .withType(SeoulAreaCsvDto.class)
+                        .withIgnoreEmptyLine(true)
+                        .build()
+                        .parse();
+
+                for (SeoulAreaCsvDto dto : csvDtos) {
+                    if (dto.getAreaCode() == null || dto.getAreaCode().isBlank()) continue;
+
+                    // DB에서 기존 지역을 찾아서 좌표만 덮어쓰기 (JPA 더티 체킹)
+                    regionRepository.findByAreaCode(dto.getAreaCode())
+                            .ifPresent(region -> region.updateCoordinates(dto.getLatitude(), dto.getLongitude()));
+                }
+                log.info("기존 지역 데이터에 좌표 정보 융합이 완료되었습니다.");
+            }
+        } catch (Exception e) {
+            log.error("좌표 업데이트 중 오류 발생", e);
+        }
     }
 
     private void loadCsvAndSave() {
@@ -78,6 +115,8 @@ public class SeoulAreaService {
                                 .areaCode(dto.getAreaCode())
                                 .areaName(dto.getAreaName())
                                 .category(dto.getCategory())
+                                .latitude(dto.getLatitude())
+                                .longitude(dto.getLongitude())
                                 .build())
                         .collect(Collectors.toList());
 

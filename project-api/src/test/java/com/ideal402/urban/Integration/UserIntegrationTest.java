@@ -54,7 +54,7 @@ public class UserIntegrationTest {
     @DisplayName("성공: 알람 설정, 삭제 및 회원 탈퇴 프로세스")
     public void userAction_FullSuccess() {
         // [Setup] 지역 및 유저 생성
-        Region region = regionRepository.save(new Region("P01", "Seoul", "Gangnam"));
+        Region region = regionRepository.save(new Region("P01", "Seoul", "Gangnam", 1D, 1D));
         String email = "success@test.com";
         String pass = "pass123";
         String cookie = getSessionCookieAfterSignup(email, pass, "tester");

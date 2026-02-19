@@ -49,7 +49,7 @@ public class UserServiceTest {
         String email = "test@email.com";
         User user = new User("test",email,"password");
         Integer regionId = 1;
-        Region region = new Region("test","test","test");
+        Region region = new Region("test","test","test", 1D, 1D);
 
         given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(region));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
@@ -81,7 +81,7 @@ public class UserServiceTest {
         Integer regionId = 1;
         User user = new User("test", email, "password");
 
-        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test")));
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test", 1D, 1D)));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.existsByUserAndRegionId(user, regionId)).willReturn(true);
 
@@ -101,7 +101,7 @@ public class UserServiceTest {
         User user = new User("test", email, "password");
         UserAlarm userAlarm = new UserAlarm(user, regionId);
 
-        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test")));
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test",1D,1D)));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.findByUserAndRegionId(user, regionId)).willReturn(Optional.of(userAlarm));
 
@@ -120,7 +120,7 @@ public class UserServiceTest {
         Integer regionId = 99; // 없는 지역 ID
         User user = new User("test", email, "password");
 
-        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test")));
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test", 1D, 1D)));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.findByUserAndRegionId(user, regionId)).willReturn(Optional.empty()); // 없음
 

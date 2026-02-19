@@ -43,9 +43,9 @@ class PopulationSchedulerIntegrationTest {
     @DisplayName("스케줄러가 설정된 주기에 맞춰 실행되고, DB에서 조회한 지역 수만큼 서비스를 호출한다")
     void schedulerRunTest() {
         // Given: 테스트용 데이터 세팅 (인구밀집지역 2개 생성)
-        regionRepository.save(new Region("POI001", "강남역", "인구밀집지역"));
-        regionRepository.save(new Region("POI002", "홍대입구", "인구밀집지역"));
-        regionRepository.save(new Region("POI999", "동네공원", "공원")); // 이건 호출되면 안 됨
+        regionRepository.save(new Region("POI001", "강남역", "인구밀집지역",1D,1D));
+        regionRepository.save(new Region("POI002", "홍대입구", "인구밀집지역", 1D, 1D));
+        regionRepository.save(new Region("POI999", "동네공원", "공원",1D,1D)); // 이건 호출되면 안 됨
 
         // When & Then: Awaitility 사용
         await()
