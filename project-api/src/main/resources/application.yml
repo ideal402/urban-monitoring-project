@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/seoulmap
+    url: jdbc:postgresql://34.64.113.229:5432/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -13,7 +13,7 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        show_sql: false   
+        show_sql: false
 
   data:
     redis:
