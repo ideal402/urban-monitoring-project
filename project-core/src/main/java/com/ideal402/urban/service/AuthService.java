@@ -52,5 +52,11 @@ public class AuthService {
 
         log.info("Signin request success.");
     }
+
+    public void checkEmail(String email) {
+        if(userRepository.existsByEmail(email)) {
+            throw new IllegalStateException("이미 사용중인 이메일입니다.");
+        }
+    }
 }
 
