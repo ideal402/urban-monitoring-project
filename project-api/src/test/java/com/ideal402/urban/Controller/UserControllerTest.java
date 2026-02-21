@@ -2,25 +2,23 @@ package com.ideal402.urban.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ideal402.urban.UserController;
-import com.ideal402.urban.api.dto.WithdrawUserRequest;
 import com.ideal402.urban.common.GlobalExceptionHandler;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.service.UserService;
+import com.ideal402.urban.service.dto.WithdrawUser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.willThrow;
 
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -89,7 +87,7 @@ public class UserControllerTest {
     public void withdrawUserTest() throws Exception {
 
         // given
-        WithdrawUserRequest request = new WithdrawUserRequest().password("password123");
+        WithdrawUser request = new WithdrawUser("password123");
 
         willDoNothing().given(userService)
                 .withdrawUser(anyString(), anyString());
@@ -105,24 +103,19 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("withdrawUser: 비밀번호 불일치 - 403")
+    @DisplayName("withdrawUser: 비밀번호 누락 - 400")
     @WithMockUser(username = "test@email.com")
     public void withdrawUserForbiddenTest() throws Exception {
 
         // given
-        WithdrawUserRequest request = new WithdrawUserRequest().password("wrongPassword");
-
-        willThrow(new AccessDeniedException("비밀번호가 일치하지 않습니다."))
-                .given(userService)
-                .withdrawUser(anyString(), anyString());
+        WithdrawUser request = new WithdrawUser("");
 
         // when & then
         mockMvc.perform(post("/user/delete")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                        .sessionAttr("email", "test@email.com")
                         .with(csrf()))
-                .andExpect(status().isForbidden())
+                .andExpect(status().isBadRequest()) // 204가 아닌 400(Bad Request)을 검증
                 .andDo(print());
     }
 
