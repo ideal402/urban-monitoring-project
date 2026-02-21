@@ -47,6 +47,14 @@ public class AuthController{
         return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
+    @GetMapping("/check-email")
+    public ResponseEntity<String> checkEmail(@RequestParam("email") String email) throws Exception {
+
+        authService.checkEmail(email);
+
+        return new ResponseEntity<>("OK", HttpStatus.OK);
+    }
+
     @PostMapping("/signup")
     public ResponseEntity<Void> signup(@RequestBody @Valid SignupRequest request,
                                        HttpServletRequest httpRequest,
