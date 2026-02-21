@@ -1,25 +1,21 @@
 package com.ideal402.urban.service;
 
+import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.entity.UserAlarm;
+import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.UserAlarmRepository;
 import com.ideal402.urban.domain.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.crossstore.ChangeSetPersister;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -40,6 +36,9 @@ public class UserServiceTest {
     private UserAlarmRepository userAlarmRepository;
 
     @Mock
+    private RegionRepository regionRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
 
@@ -50,7 +49,9 @@ public class UserServiceTest {
         String email = "test@email.com";
         User user = new User("test",email,"password");
         Integer regionId = 1;
+        Region region = new Region("test","test","test");
 
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(region));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.existsByUserAndRegionId(user, regionId)).willReturn(false);
 
@@ -66,6 +67,7 @@ public class UserServiceTest {
     void addAlarm_InvalidRegionId_ThrowIllegalArgument() throws Exception {
         String email = "test@email.com";
         Integer regionId = 30;
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.addAlarm(email, regionId))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -79,6 +81,7 @@ public class UserServiceTest {
         Integer regionId = 1;
         User user = new User("test", email, "password");
 
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test")));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.existsByUserAndRegionId(user, regionId)).willReturn(true);
 
@@ -98,6 +101,7 @@ public class UserServiceTest {
         User user = new User("test", email, "password");
         UserAlarm userAlarm = new UserAlarm(user, regionId);
 
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test")));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.findByUserAndRegionId(user, regionId)).willReturn(Optional.of(userAlarm));
 
@@ -116,6 +120,7 @@ public class UserServiceTest {
         Integer regionId = 99; // 없는 지역 ID
         User user = new User("test", email, "password");
 
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.of(new Region("test","test","test")));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(userAlarmRepository.findByUserAndRegionId(user, regionId)).willReturn(Optional.empty()); // 없음
 
@@ -132,6 +137,7 @@ public class UserServiceTest {
     void deleteAlarm_InvalidRegionId_ThrowIllegalArgument() throws Exception {
         String email = "test@email.com";
         Integer regionId = 30;
+        given(regionRepository.findById(regionId.longValue())).willReturn(Optional.empty());
 
         assertThatThrownBy(()-> userService.deleteAlarm(email,regionId))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -158,7 +164,7 @@ public class UserServiceTest {
 
     @Test
     @DisplayName("withdrawUser: 실패 - 비밀번호 불일지")
-    void withdrawUser_InvalidPassword_AccessDeniedException() throws Exception {
+    void withdrawUser_InvalidPassword_IllegalArgumentException() throws Exception {
         //given
         String email = "test@email.com";
         String inputPassword = "wrongPassword";
@@ -169,7 +175,7 @@ public class UserServiceTest {
 
         //when & then
         assertThatThrownBy(() -> userService.withdrawUser(email, inputPassword))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(IllegalArgumentException.class);
 
         then(userRepository).should(never()).delete(any());
     }

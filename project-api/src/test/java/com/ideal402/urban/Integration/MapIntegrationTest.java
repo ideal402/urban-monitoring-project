@@ -1,11 +1,10 @@
-package com.ideal402.urban;
+package com.ideal402.urban.Integration;
 
 import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.RegionStatusRepository;
-import com.ideal402.urban.scheduler.PopulationScheduler;
 import com.ideal402.urban.service.SeoulAreaService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;

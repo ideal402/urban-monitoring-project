@@ -1,6 +1,5 @@
 package com.ideal402.urban.domain.repository;
 
-import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.User;
 import com.ideal402.urban.domain.entity.UserAlarm;
 import org.springframework.data.jpa.repository.JpaRepository;

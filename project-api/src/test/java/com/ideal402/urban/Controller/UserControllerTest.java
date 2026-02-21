@@ -1,9 +1,9 @@
-package com.ideal402.urban;
+package com.ideal402.urban.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ideal402.urban.UserController;
 import com.ideal402.urban.api.dto.WithdrawUserRequest;
 import com.ideal402.urban.common.GlobalExceptionHandler;
-import com.ideal402.urban.common.ResourceNotFoundException;
 import com.ideal402.urban.config.SecurityConfig;
 import com.ideal402.urban.domain.repository.UserRepository;
 import com.ideal402.urban.service.UserService;
