@@ -16,6 +16,9 @@ public class SeoulAreaCsvDto {
     @CsvBindByName(column = "AREA_NM")
     private String areaName;
 
-    @CsvBindByName(column = "ENG_NM")
-    private String engName;
+    @CsvBindByName(column = "LAT")
+    private Double latitude;
+
+    @CsvBindByName(column = "LNG")
+    private Double longitude;
 }
