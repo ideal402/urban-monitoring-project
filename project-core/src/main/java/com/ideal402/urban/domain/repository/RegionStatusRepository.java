@@ -4,6 +4,7 @@ import com.ideal402.urban.domain.entity.RegionStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,5 +27,16 @@ public interface RegionStatusRepository extends JpaRepository<RegionStatus, Long
     @Query("SELECT rs FROM RegionStatus rs JOIN FETCH rs.region " +
             "WHERE rs.id IN (SELECT MAX(rs2.id) FROM RegionStatus rs2 GROUP BY rs2.region.id)")
     List<RegionStatus> findLatestStatusOfAllRegionsWithRegion();
+
+    @Query("SELECT rs FROM RegionStatus rs JOIN FETCH rs.region r " +
+            "WHERE r.latitude BETWEEN :minLat AND :maxLat " +
+            "AND r.longitude BETWEEN :minLon AND :maxLon " +
+            "AND rs.id IN (SELECT MAX(rs2.id) FROM RegionStatus rs2 GROUP BY rs2.region.id)")
+    List<RegionStatus> findLatestStatusByBoundingBox(
+            @Param("minLat") Double minLat,
+            @Param("maxLat") Double maxLat,
+            @Param("minLon") Double minLon,
+            @Param("maxLon") Double maxLon
+    );
 
 }

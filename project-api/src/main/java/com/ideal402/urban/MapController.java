@@ -22,10 +22,15 @@ public class MapController{
 
     @GetMapping("/current")
     public ResponseEntity<List<CustomMapInfo>> getMapData(
-            @RequestParam(value = "regionId", required = false) Integer regionId) {
-        return ResponseEntity.ok(mapService.getMapData(regionId));
+            @RequestParam(value = "regionId", required = false) Integer regionId,
+            @RequestParam(value = "minLat", required = false) Double minLat, // 최소 위도 (남단)
+            @RequestParam(value = "maxLat", required = false) Double maxLat, // 최대 위도 (북단)
+            @RequestParam(value = "minLon", required = false) Double minLon, // 최소 경도 (서단)
+            @RequestParam(value = "maxLon", required = false) Double maxLon  // 최대 경도 (동단)
+    ) {
+        return ResponseEntity.ok(mapService.getMapData(regionId, minLat, maxLat, minLon, maxLon));
     }
-
+    
     @GetMapping("/forecast")
     public ResponseEntity<List<ForecastInfo>> getMapForecast(
             @RequestParam(value = "regionId", required = false) Integer regionId) {
