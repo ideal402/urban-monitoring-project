@@ -5,6 +5,7 @@ import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.RegionStatusRepository;
+import com.ideal402.urban.service.dto.CustomMapInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,17 +28,17 @@ public class MapService {
     private final SeoulAreaService seoulAreaService;
 
     @Transactional(readOnly = true)
-    public List<MapInfo> getMapData(Integer regionId) {
+    public List<CustomMapInfo> getMapData(Integer regionId) {
         // 필터링 ID가 넘어온 경우
         if (regionId != null) {
             return regionStatusRepository.findFirstByRegionIdOrderByMeasurementTimeDesc(regionId.longValue())
-                    .map(status -> List.of(convertToMapInfo(status)))
+                    .map(status -> List.of(CustomMapInfo.from(status)))
                     .orElse(List.of());
         }
 
         // 전체 조회
-        return regionStatusRepository.findLatestStatusOfAllRegions().stream()
-                .map(this::convertToMapInfo)
+        return regionStatusRepository.findLatestStatusOfAllRegionsWithRegion().stream()
+                .map(CustomMapInfo::from)
                 .collect(Collectors.toList());
     }
 
