@@ -80,7 +80,7 @@ public class SecurityConfig {
 
         // [중요] allowCredentials(true)일 경우 allowedOrigins에 "*"를 사용할 수 없습니다.
         // 프론트엔드 개발 서버의 정확한 Origin을 명시해야 합니다. (Vite 기본 포트인 경우 5173)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173","https://urdanflow.netlify.app/"));
 
         // 브라우저의 Preflight(사전 요청)를 통과하기 위해 OPTIONS 메서드가 반드시 포함되어야 합니다.
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
