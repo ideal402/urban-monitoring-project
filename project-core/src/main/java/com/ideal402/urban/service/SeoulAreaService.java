@@ -70,7 +70,6 @@ public class SeoulAreaService {
         log.info("Region Cache Initialized: {} entries", regionCache.size());
     }
 
-    // 새롭게 추가할 업데이트 전용 메서드
     private void updateRegionCoordinatesFromCsv() {
         try {
             Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv"); // 좌표가 추가된 최종 CSV 파일명

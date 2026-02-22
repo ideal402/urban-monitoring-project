@@ -21,49 +21,65 @@ public class PopulationScheduler {
     private final SeoulAreaService seoulAreaService;
     private final RegionRepository regionRepository;
 
-    // 인구밀집지역 AREA_CD 리스트 (DB나 설정파일에서 가져오는 것을 권장)
     private static final String TARGET_CATEGORY = "인구밀집지역";
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(2)
     public void initJob() {
         log.info("애플리케이션 시작 - 초기 데이터 갱신 실행");
-        runUpdate();
+
+        runUpdateAll();
     }
 
     @Scheduled(cron = "${app.scheduler.cron.daytime}") // 주간: 매시 1분
     public void daytimeJob() {
         log.info("주간 데이터 스케줄러 시작");
-        runUpdate();
+       runUpdateByCategory(TARGET_CATEGORY);
     }
 
     @Scheduled(cron = "${app.scheduler.cron.daytime}") // 야간: 2시간마다 1분
     public void nighttimeJob() {
         log.info("야간 데이터 스케줄러 시작");
-        runUpdate();
+       runUpdateByCategory(TARGET_CATEGORY);
     }
 
-    private void runUpdate() {
-        // 1. DB에서 '인구밀집지역'에 해당하는 코드 리스트 조회
-        List<String> densityAreas = regionRepository.findAreaCodesByCategory(TARGET_CATEGORY);
 
-        if (densityAreas.isEmpty()) {
-            log.warn("조회된 인구밀집지역이 없습니다. 스케줄러를 종료합니다.");
+    private void runUpdateAll() {
+        // 전체 지역 AREA_CD 리스트 조회
+        List<String> allAreas = regionRepository.findAllAreaCodes();
+        executeUpdate(allAreas, "전체 지역");
+    }
+
+    private void runUpdateByCategory(String category) {
+        List<String> categoryAreas = regionRepository.findAreaCodesByCategory(category);
+        executeUpdate(categoryAreas, "카테고리[" + category + "]");
+    }
+
+    private void executeUpdate(List<String> areaCodes, String jobType) {
+        if (areaCodes.isEmpty()) {
+            log.warn("{} - 조회된 대상 지역이 없습니다. 작업을 종료합니다.", jobType);
             return;
         }
 
-        log.info("총 {}개의 지역 데이터를 갱신합니다.", densityAreas.size());
+        log.info("{} - 총 {}개의 지역 데이터 갱신을 시작합니다.", jobType, areaCodes.size());
 
-        // 2. 조회된 리스트로 업데이트 실행
-        for (String areaCd : densityAreas) {
+        for (String areaCd : areaCodes) {
             try {
                 seoulAreaService.updateRegionStatus(areaCd);
-                // API 서버 부하 방지용 짧은 지연
+
+                // API 서버 부하 방지 및 Rate Limit 대응용 지연 (100ms = 초당 10건)
                 Thread.sleep(100);
+            } catch (InterruptedException e) {
+                log.error("{} - 스케줄러 대기 중 인터럽트 발생: {}", jobType, e.getMessage());
+                // 인터럽트 상태 복구
+                Thread.currentThread().interrupt();
+                break; // 스레드가 중단되었으므로 루프 탈출
             } catch (Exception e) {
-                log.error("스케줄러 실행 중 에러 발생 - areaCd: {}", areaCd, e);
+                log.error("{} - 스케줄러 실행 중 에러 발생 - areaCd: {}", jobType, areaCd, e);
             }
         }
+
+        log.info("{} - 데이터 갱신 완료", jobType);
     }
 
 
