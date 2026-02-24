@@ -17,4 +17,6 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
     List<String> findAllAreaCodes();
 
     Optional<Region> findByAreaCode(String areaCode);
+
+    List<Region> findByCategory(String category);
 }
