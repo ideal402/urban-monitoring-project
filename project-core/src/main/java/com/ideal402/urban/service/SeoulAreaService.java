@@ -38,7 +38,6 @@ public class SeoulAreaService {
     private final RegionRepository regionRepository;
     private final RegionStatusRepository regionStatusRepository;
     private final ResourceLoader resourceLoader;
-    private final SeoulApiClient seoulApiClient;
 
     //region 데이터 메모리에 캐싱
     private Map<String, Region> regionCache = new ConcurrentHashMap<>();
@@ -52,48 +51,9 @@ public class SeoulAreaService {
             log.info("DB가 비어있습니다. CSV 데이터를 전체 로드합니다.");
             loadCsvAndSave();
         }
-        // 2. 지역 데이터는 있는데 좌표(latitude)가 비어있는 경우 (열만 추가된 현재 상황)
-        else {
-            long missingCoordsCount = regionRepository.findAll().stream()
-                    .filter(r -> r.getLatitude() == null)
-                    .count();
-
-            if (missingCoordsCount > 0) {
-                log.info("좌표 정보가 없는 지역 {}건을 발견했습니다. 좌표 업데이트를 진행합니다.", missingCoordsCount);
-                updateRegionCoordinatesFromCsv();
-            } else {
-                log.info("모든 지역에 좌표 데이터가 존재합니다. 마이그레이션을 건너뜁니다.");
-            }
-        }
 
         refreshRegionCache();
         log.info("Region Cache Initialized: {} entries", regionCache.size());
-    }
-
-    private void updateRegionCoordinatesFromCsv() {
-        try {
-            Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv"); // 좌표가 추가된 최종 CSV 파일명
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(new BOMInputStream(resource.getInputStream()), StandardCharsets.UTF_8))) {
-
-                List<SeoulAreaCsvDto> csvDtos = new CsvToBeanBuilder<SeoulAreaCsvDto>(reader)
-                        .withType(SeoulAreaCsvDto.class)
-                        .withIgnoreEmptyLine(true)
-                        .build()
-                        .parse();
-
-                for (SeoulAreaCsvDto dto : csvDtos) {
-                    if (dto.getAreaCode() == null || dto.getAreaCode().isBlank()) continue;
-
-                    // DB에서 기존 지역을 찾아서 좌표만 덮어쓰기 (JPA 더티 체킹)
-                    regionRepository.findByAreaCode(dto.getAreaCode())
-                            .ifPresent(region -> region.updateCoordinates(dto.getLatitude(), dto.getLongitude()));
-                }
-                log.info("기존 지역 데이터에 좌표 정보 융합이 완료되었습니다.");
-            }
-        } catch (Exception e) {
-            log.error("좌표 업데이트 중 오류 발생", e);
-        }
     }
 
     private void loadCsvAndSave() {
@@ -140,19 +100,17 @@ public class SeoulAreaService {
 
     }
 
-    public void updateRegionStatus(String areaCd){
+
+    // 데이터 업데이트
+    public void updateRegionStatus(String areaCd, SeoulRealTimeDataResponse response){
 
         Region region = regionCache.get(areaCd);
         if (region == null) {
             log.warn("캐시에서 지역을 찾을 수 없습니다: {}", areaCd);
             return;
         }
-
-        SeoulRealTimeDataResponse response;
-        try {
-            response = seoulApiClient.getSeoulData(areaCd);
-        } catch (Exception e) {
-            log.error("API 호출 실패 - areaCd: {}", areaCd, e);
+        if (response == null || response.data() == null) {
+            log.warn("API 응답 데이터가 비어있습니다 - areaCd: {}", areaCd);
             return;
         }
 
