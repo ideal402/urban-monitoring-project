@@ -37,15 +37,10 @@ public class SeoulDataScheduler {
         runUpdateAll();
     }
 
-    @Scheduled(cron = "${app.scheduler.cron.daytime}")
-    public void daytimeJob() {
-        log.info("주간 데이터 스케줄러 시작");
-        runUpdateByCategory(TARGET_CATEGORY);
-    }
-
-    @Scheduled(cron = "${app.scheduler.cron.nighttime}")
-    public void nighttimeJob() {
-        log.info("야간 데이터 스케줄러 시작");
+    // 주간/야간 구분을 없애고 단일 스케줄러로 통합
+    @Scheduled(cron = "${app.scheduler.cron.interval}")
+    public void periodicJob() {
+        log.info("실시간 서울 공공데이터 스케줄러 시작 (주기: 10분)");
         runUpdateByCategory(TARGET_CATEGORY);
     }
 
@@ -84,20 +79,14 @@ public class SeoulDataScheduler {
                     if (trafficNode != null) {
                         JsonNode targetArray = null;
 
-                        // Case A: 정상적인 JSON 객체 내부에 배열이 있는 구조
                         if (trafficNode.isObject() && trafficNode.has("ROAD_TRAFFIC_STTS")) {
                             targetArray = trafficNode.get("ROAD_TRAFFIC_STTS");
-                        }
-                        // Case B: 직접 배열로 내려오는 구조
-                        else if (trafficNode.isArray()) {
+                        } else if (trafficNode.isArray()) {
                             targetArray = trafficNode;
-                        }
-                        // Case C: 도로 데이터가 없는 지역 (문자열 응답)
-                        else if (trafficNode.isTextual()) {
+                        } else if (trafficNode.isTextual()) {
                             log.debug("[{}] 도로 데이터 없음: {}", areaName, trafficNode.asText());
                         }
 
-                        // 추출한 타겟 배열을 List<RoadTraffic> DTO로 변환
                         if (targetArray != null && targetArray.isArray()) {
                             List<SeoulRealTimeDataResponse.RoadTraffic> trafficList = new ArrayList<>();
                             for (JsonNode node : targetArray) {
@@ -110,7 +99,6 @@ public class SeoulDataScheduler {
                                 }
                             }
 
-                            // DB 저장 서비스 호출 (트랜잭션 위임)
                             if (!trafficList.isEmpty()) {
                                 roadTrafficService.updateRoadTrafficStatus(trafficList);
                             }
