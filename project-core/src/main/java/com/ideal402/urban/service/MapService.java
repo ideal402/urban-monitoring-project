@@ -5,6 +5,7 @@ import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.RegionStatusRepository;
+import com.ideal402.urban.service.dto.CustomMapInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,18 +27,25 @@ public class MapService {
 
     private final SeoulAreaService seoulAreaService;
 
-    @Transactional(readOnly = true)
-    public List<MapInfo> getMapData(Integer regionId) {
-        // 필터링 ID가 넘어온 경우
+    public List<CustomMapInfo> getMapData(Integer regionId, Double minLat, Double maxLat, Double minLon, Double maxLon) {
+
+        // 1. 단일 지역 ID 조회
         if (regionId != null) {
             return regionStatusRepository.findFirstByRegionIdOrderByMeasurementTimeDesc(regionId.longValue())
-                    .map(status -> List.of(convertToMapInfo(status)))
+                    .map(status -> List.of(CustomMapInfo.from(status)))
                     .orElse(List.of());
         }
 
-        // 전체 조회
-        return regionStatusRepository.findLatestStatusOfAllRegions().stream()
-                .map(this::convertToMapInfo)
+        // 2. 지도 바운더리(Bounding Box) 범위 내 조회
+        if (minLat != null && maxLat != null && minLon != null && maxLon != null) {
+            return regionStatusRepository.findLatestStatusByBoundingBox(minLat, maxLat, minLon, maxLon).stream()
+                    .map(CustomMapInfo::from)
+                    .collect(Collectors.toList());
+        }
+
+        // 3. 파라미터가 없는 경우 (전체 조회)
+        return regionStatusRepository.findLatestStatusOfAllRegionsWithRegion().stream()
+                .map(CustomMapInfo::from)
                 .collect(Collectors.toList());
     }
 
