@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.List;
 
 // [1] 최상위 응답 (Root)
@@ -26,7 +28,7 @@ public record SeoulRealTimeDataResponse(
             List<WeatherInfo> weather,       // 날씨
 
             @JsonProperty("ROAD_TRAFFIC_STTS")
-            RoadTrafficInfo roadTraffic      // 도로 소통 (객체 내부에 리스트 등 복합 구조)
+            JsonNode roadTrafficNode
     ) {}
 
     // [3-1] 인구 정보
@@ -63,17 +65,14 @@ public record SeoulRealTimeDataResponse(
 
     // [3-3] 도로 교통 정보
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record RoadTrafficInfo(
-            @JsonProperty("AVG_ROAD_DATA")
-            AvgRoadData avgRoadData
-    ) {}
+    public record RoadTraffic(
+            @JsonProperty("LINK_ID")
+            String linkId,
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record AvgRoadData(
-            @JsonProperty("ROAD_TRAFFIC_IDX")
-            String trafficIndex,      // "원활"
+            @JsonProperty("SPD")
+            String spd,
 
-            @JsonProperty("ROAD_TRAFFIC_SPD")
-            int speed                 // 29
+            @JsonProperty("IDX")
+            String trafficIdx
     ) {}
 }

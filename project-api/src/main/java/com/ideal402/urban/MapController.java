@@ -2,14 +2,13 @@ package com.ideal402.urban;
 
 import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
+import com.ideal402.urban.service.dto.RoadResponse;
 import com.ideal402.urban.service.MapService;
+import com.ideal402.urban.service.RoadTrafficService;
 import com.ideal402.urban.service.dto.CustomMapInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,6 +18,7 @@ import java.util.List;
 public class MapController{
 
     private final MapService mapService;
+    private final RoadTrafficService roadTrafficService;
 
     @GetMapping("/current")
     public ResponseEntity<List<CustomMapInfo>> getMapData(
@@ -42,4 +42,13 @@ public class MapController{
             @RequestParam(value = "regionId", required = true) Integer regionId){
         return ResponseEntity.ok(mapService.getRegionSummary(regionId));
     }
+
+    @PostMapping("/roads/traffic")
+    public ResponseEntity<List<RoadResponse>> getRoadTrafficInArea(@RequestBody List<String> h3Indices) {
+
+        List<RoadResponse> responses = roadTrafficService.getRoadTrafficByH3Indices(h3Indices);
+
+        return ResponseEntity.ok(responses);
+    }
+
 }

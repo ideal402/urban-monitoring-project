@@ -25,8 +25,6 @@ public class MapService {
     private final RegionRepository regionRepository;
     private final RegionStatusRepository regionStatusRepository;
 
-    private final SeoulAreaService seoulAreaService;
-
     public List<CustomMapInfo> getMapData(Integer regionId, Double minLat, Double maxLat, Double minLon, Double maxLon) {
 
         // 1. 단일 지역 ID 조회
