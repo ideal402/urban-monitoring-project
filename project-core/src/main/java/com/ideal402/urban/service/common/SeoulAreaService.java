@@ -5,27 +5,12 @@ import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.RegionStatusRepository;
 import com.ideal402.urban.external.seoul.dto.SeoulRealTimeDataResponse;
-import com.ideal402.urban.service.dto.SeoulAreaCsvDto;
-import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.input.BOMInputStream;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -34,78 +19,20 @@ public class SeoulAreaService {
 
     private final RegionRepository regionRepository;
     private final RegionStatusRepository regionStatusRepository;
-    private final ResourceLoader resourceLoader;
-
-    //region 데이터 메모리에 캐싱
-    private Map<String, Region> regionCache = new ConcurrentHashMap<>();
-
-    @EventListener(ApplicationReadyEvent.class)
-    @Order(1)
-    @Transactional
-    public void setupInitialData() {
-        // 1. DB에 지역 데이터 자체가 아예 없는 경우 (최초 실행)
-        if (regionRepository.count() == 0) {
-            log.info("DB가 비어있습니다. CSV 데이터를 전체 로드합니다.");
-            loadCsvAndSave();
-        }
-
-        refreshRegionCache();
-        log.info("Region Cache Initialized: {} entries", regionCache.size());
-    }
-
-    private void loadCsvAndSave() {
-        try {
-            Resource resource = resourceLoader.getResource("classpath:seoul_spots.csv");
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(new BOMInputStream(resource.getInputStream()), StandardCharsets.UTF_8))) {
-
-                List<SeoulAreaCsvDto> csvDtos = new CsvToBeanBuilder<SeoulAreaCsvDto>(reader)
-                        .withType(SeoulAreaCsvDto.class)
-                        .withIgnoreEmptyLine(true)
-                        .build()
-                        .parse();
-
-                List<Region> regions = csvDtos.stream()
-                        .filter(dto -> dto.getAreaCode() != null && !dto.getAreaCode().isBlank())
-                        .map(dto -> Region.builder()
-                                .areaCode(dto.getAreaCode())
-                                .areaName(dto.getAreaName())
-                                .category(dto.getCategory())
-                                .latitude(dto.getLatitude())
-                                .longitude(dto.getLongitude())
-                                .build())
-                        .collect(Collectors.toList());
-
-                regionRepository.saveAll(regions);
-            }
-        } catch (Exception e) {
-            log.error("CSV 초기화 실패", e);
-            // 초기 데이터 로딩 실패는 치명적이므로 예외를 던져 서버 시작을 막거나 알림을 줘야 함
-            throw new RuntimeException("초기 데이터 로딩 실패", e);
-        }
-    }
-
-    private void refreshRegionCache() {
-        List<Region> allRegions = regionRepository.findAll();
-
-        this.regionCache = allRegions.stream()
-                .collect(Collectors.toConcurrentMap(
-                        Region::getAreaCode,
-                        region -> region,
-                        (existing, replacement) -> existing // 중복 시 기존 것 유지
-                ));
-
-    }
-
 
     // 데이터 업데이트
+    @Transactional
     public void updateRegionStatus(String areaCd, SeoulRealTimeDataResponse response){
 
-        Region region = regionCache.get(areaCd);
+        // Repository를 통해 DB에서 Entity를 직접 조회 (Query Method 활용)
+        Region region = regionRepository.findByAreaCode(areaCd)
+                .orElse(null);
+
         if (region == null) {
-            log.warn("캐시에서 지역을 찾을 수 없습니다: {}", areaCd);
+            log.warn("데이터베이스에서 지역을 찾을 수 없습니다: {}", areaCd);
             return;
         }
+
         if (response == null || response.data() == null) {
             log.warn("API 응답 데이터가 비어있습니다 - areaCd: {}", areaCd);
             return;
@@ -127,8 +54,8 @@ public class SeoulAreaService {
         return RegionStatus.builder()
                 .region(region)
                 .congestionLevel(mapCongestionLevel(population.congestionLevel()))
-                .weatherCode(parseSafeInt(weather.temperature())) // 예시: 온도를 정수로 변환하여 저장
-                .airQualityLevel(mapAirQualityLevel(weather.pm10()))   // 미세먼지 농도 저장
+                .weatherCode(parseSafeInt(weather.temperature()))
+                .airQualityLevel(mapAirQualityLevel(weather.pm10()))
                 .measurementTime(measuredTime)
                 .build();
     }
