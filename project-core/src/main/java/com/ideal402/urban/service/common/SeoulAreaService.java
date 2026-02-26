@@ -1,11 +1,9 @@
-package com.ideal402.urban.service;
+package com.ideal402.urban.service.common;
 
-import com.ideal402.urban.api.dto.MapInfo;
 import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.RegionStatus;
 import com.ideal402.urban.domain.repository.RegionRepository;
 import com.ideal402.urban.domain.repository.RegionStatusRepository;
-import com.ideal402.urban.external.seoul.client.SeoulApiClient;
 import com.ideal402.urban.external.seoul.dto.SeoulRealTimeDataResponse;
 import com.ideal402.urban.service.dto.SeoulAreaCsvDto;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -26,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 

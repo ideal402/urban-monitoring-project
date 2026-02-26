@@ -1,4 +1,4 @@
-package com.ideal402.urban.service;
+package com.ideal402.urban.service.common;
 
 import com.ideal402.urban.api.dto.ForecastInfo;
 import com.ideal402.urban.api.dto.MapInfo;
@@ -9,7 +9,6 @@ import com.ideal402.urban.service.dto.CustomMapInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;

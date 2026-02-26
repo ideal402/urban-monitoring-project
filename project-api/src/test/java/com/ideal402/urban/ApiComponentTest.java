@@ -3,7 +3,7 @@
 //import com.ideal402.urban.api.dto.*;
 //import com.ideal402.urban.runner.SeoulApiRunner;
 //import com.ideal402.urban.service.AuthService;
-//import com.ideal402.urban.service.MapService;
+//import com.ideal402.urban.service.common.MapService;
 //import com.ideal402.urban.service.UserService;
 //import org.junit.jupiter.api.DisplayName;
 //import org.junit.jupiter.api.MethodOrderer;

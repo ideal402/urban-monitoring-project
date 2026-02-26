@@ -1,4 +1,4 @@
-package com.ideal402.urban.service;
+package com.ideal402.urban.service.common;
 
 import com.ideal402.urban.domain.entity.Road;
 import com.ideal402.urban.domain.entity.RoadStatus;
