@@ -1,0 +1,24 @@
+spring:
+  main:
+    web-application-type: none
+
+  datasource:
+    url: jdbc:postgresql://34.64.113.229:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+
+app:
+  scheduler:
+    cron:
+      interval: "0 0/10 * * * *" # 10분 주기 실행
