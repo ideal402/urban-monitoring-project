@@ -36,17 +36,25 @@ public class MapController{
         });
     }
 
-//    @GetMapping("/forecast")
-//    public CompletableFuture<ResponseEntity<List<ForecastInfo>>> getMapForecast(
-//            @RequestParam(value = "regionId", required = false) Integer regionId) {
-//        return ResponseEntity.ok(mapService.getForecastData(regionId));
-//    }
+    @GetMapping("/forecast")
+    public CompletableFuture<ResponseEntity<List<ForecastInfo>>> getMapForecast(
+            @RequestParam(value = "regionId", required = false) Integer regionId) {
+        return CompletableFuture.supplyAsync(() -> {
+            return mapService.getForecastData(regionId);
+        }).thenApply(forecastData -> {
+            return ResponseEntity.ok(forecastData);
+        });
+    }
 
-//    @GetMapping("/summary")
-//    public ResponseEntity<List<MapInfo>> getRegionSummary(
-//            @RequestParam(value = "regionId", required = true) Integer regionId){
-//        return ResponseEntity.ok(mapService.getRegionSummary(regionId));
-//    }
+    @GetMapping("/summary")
+    public CompletableFuture<ResponseEntity<List<MapInfo>>> getRegionSummary(
+            @RequestParam(value = "regionId", required = true) Integer regionId) {
+        return CompletableFuture.supplyAsync(() -> {
+            return mapService.getRegionSummary(regionId);
+        }).thenApply(summaryData -> {
+            return ResponseEntity.ok(summaryData);
+        });
+    }
 
     @PostMapping("/roads/traffic")
     public CompletableFuture<ResponseEntity<List<RoadResponse>>> getRoadTrafficInArea(@RequestBody List<String> h3Indices) {
