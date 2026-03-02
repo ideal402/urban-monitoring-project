@@ -12,6 +12,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user")
@@ -21,42 +23,47 @@ public class UserController{
 
 
     @PostMapping("/alarm/{regionId}")
-    public ResponseEntity<Void> setAlarms(
+    public CompletableFuture<ResponseEntity<Void>> setAlarms(
             @PathVariable Integer regionId,
             @AuthenticationPrincipal String email
-    ){
-        userService.addAlarm(email, regionId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    ) {
+        return CompletableFuture.runAsync(() -> {
+            userService.addAlarm(email, regionId);
+        }).thenApply(v -> {
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        });
     }
 
     @DeleteMapping("/alarm/{regionId}")
-    public ResponseEntity<Void> deleteAlarms(
+    public CompletableFuture<ResponseEntity<Void>> deleteAlarms(
             @PathVariable Integer regionId,
             @AuthenticationPrincipal String email
-    ){
-        userService.deleteAlarm(email, regionId);
-
-        return ResponseEntity.noContent().build();
+    ) {
+        return CompletableFuture.runAsync(() -> {
+            userService.deleteAlarm(email, regionId);
+        }).thenApply(v -> {
+            return ResponseEntity.noContent().build();
+        });
     }
 
     @PostMapping("/delete")
-    public ResponseEntity<Void> withdrawUser(
+    public CompletableFuture<ResponseEntity<Void>> withdrawUser(
             @RequestBody @Valid WithdrawUser withdrawUser,
             @AuthenticationPrincipal String email,
             HttpServletRequest request
     ) {
+        return CompletableFuture.runAsync(() -> {
+            String password = withdrawUser.getPassword();
+            userService.withdrawUser(email, password);
 
-        String password = withdrawUser.getPassword();
-
-        userService.withdrawUser(email, password);
-
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        SecurityContextHolder.clearContext();
-
-        return ResponseEntity.noContent().build();
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            SecurityContextHolder.clearContext();
+        }).thenApply(v -> {
+            return ResponseEntity.noContent().build();
+        });
     }
 
 }
