@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,6 +22,7 @@ public class UserController{
 
     private final UserService userService;
 
+    private final Executor asyncExecutor;
 
     @PostMapping("/alarm/{regionId}")
     public CompletableFuture<ResponseEntity<Void>> setAlarms(
@@ -29,7 +31,7 @@ public class UserController{
     ) {
         return CompletableFuture.runAsync(() -> {
             userService.addAlarm(email, regionId);
-        }).thenApply(v -> {
+        }, asyncExecutor).thenApply(v -> {
             return ResponseEntity.status(HttpStatus.CREATED).build();
         });
     }
@@ -41,7 +43,7 @@ public class UserController{
     ) {
         return CompletableFuture.runAsync(() -> {
             userService.deleteAlarm(email, regionId);
-        }).thenApply(v -> {
+        } ,asyncExecutor).thenApply(v -> {
             return ResponseEntity.noContent().build();
         });
     }
@@ -61,7 +63,7 @@ public class UserController{
                 session.invalidate();
             }
             SecurityContextHolder.clearContext();
-        }).thenApply(v -> {
+        }, asyncExecutor).thenApply(v -> {
             return ResponseEntity.noContent().build();
         });
     }

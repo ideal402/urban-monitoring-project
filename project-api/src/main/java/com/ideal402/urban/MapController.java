@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ public class MapController{
 
     private final MapService mapService;
     private final RoadTrafficService roadTrafficService;
+    private final Executor asyncExecutor;
 
     @GetMapping("/current")
     public CompletableFuture<ResponseEntity<List<CustomMapInfo>>> getMapData(
@@ -31,7 +33,7 @@ public class MapController{
     ) {
         return CompletableFuture.supplyAsync(() -> {
             return mapService.getMapData(regionId, minLat, maxLat, minLon, maxLon);
-        }).thenApply(mapData -> {
+        }, asyncExecutor).thenApply(mapData -> {
             return ResponseEntity.ok(mapData);
         });
     }
@@ -41,7 +43,7 @@ public class MapController{
             @RequestParam(value = "regionId", required = false) Integer regionId) {
         return CompletableFuture.supplyAsync(() -> {
             return mapService.getForecastData(regionId);
-        }).thenApply(forecastData -> {
+        }, asyncExecutor).thenApply(forecastData -> {
             return ResponseEntity.ok(forecastData);
         });
     }
@@ -51,7 +53,7 @@ public class MapController{
             @RequestParam(value = "regionId", required = true) Integer regionId) {
         return CompletableFuture.supplyAsync(() -> {
             return mapService.getRegionSummary(regionId);
-        }).thenApply(summaryData -> {
+        }, asyncExecutor).thenApply(summaryData -> {
             return ResponseEntity.ok(summaryData);
         });
     }
@@ -60,7 +62,7 @@ public class MapController{
     public CompletableFuture<ResponseEntity<List<RoadResponse>>> getRoadTrafficInArea(@RequestBody List<String> h3Indices) {
         return CompletableFuture.supplyAsync(() -> {
             return roadTrafficService.getRoadTrafficByH3Indices(h3Indices);
-        })
+        }, asyncExecutor)
         .thenApply(trafficData -> {
             return ResponseEntity.ok(trafficData);
         });
