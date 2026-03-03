@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,72 +33,103 @@ import java.util.List;
 public class AuthController{
 
     private final AuthService authService;
+    private final Executor asyncExecutor;
 
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @GetMapping("/status")
-    public ResponseEntity<String> status() throws Exception {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public CompletableFuture<ResponseEntity<String>> status() throws Exception {
 
-        if (authentication == null ||
-                authentication instanceof AnonymousAuthenticationToken ||
-                !authentication.isAuthenticated()) {
+        SecurityContext context = SecurityContextHolder.getContext();
 
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
-        }
+        return CompletableFuture.supplyAsync(() -> {
 
-        return new ResponseEntity<>("OK", HttpStatus.OK);
+            SecurityContextHolder.setContext(context);
+
+            try {
+                return SecurityContextHolder.getContext().getAuthentication();
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+
+        }, asyncExecutor)
+
+        .thenApply(authentication -> {
+            if (authentication == null ||
+                    authentication instanceof AnonymousAuthenticationToken ||
+                    !authentication.isAuthenticated()) {
+
+                return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
+
+            return new ResponseEntity<>("OK", HttpStatus.OK);
+        });
+
     }
 
     @GetMapping("/check-email")
-    public ResponseEntity<String> checkEmail(@RequestParam("email") String email) throws Exception {
-
-        authService.checkEmail(email);
-
-        return new ResponseEntity<>("OK", HttpStatus.OK);
+    public CompletableFuture<ResponseEntity<String>> checkEmail(@RequestParam("email") String email){
+        return CompletableFuture.runAsync(()->{
+            authService.checkEmail(email);
+        }, asyncExecutor)
+        .thenApply(     v ->{
+            return new ResponseEntity<>("OK", HttpStatus.OK);
+        });
     }
 
+
     @PostMapping("/signup")
-    public ResponseEntity<Void> signup(@RequestBody @Valid SignupRequest request,
+    public CompletableFuture<ResponseEntity<Void>> signup(@RequestBody @Valid SignupRequest request,
                                        HttpServletRequest httpRequest,
-                                       HttpServletResponse httpResponse ) throws Exception {
+                                       HttpServletResponse httpResponse ){
 
-        authService.signup(request);
+        return CompletableFuture.runAsync(()->{
+            try{
+                authService.signup(request);
 
-        SigninRequest signinRequest = new SigninRequest(request.getEmail(), request.getPassword());
-        authService.signin(signinRequest);
+                SigninRequest signinRequest = new SigninRequest(request.getEmail(), request.getPassword());
+                authService.signin(signinRequest);
 
-        saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
-
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+                saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }, asyncExecutor)
+        .thenApply(v -> ResponseEntity.status(HttpStatus.CREATED).build());
     }
 
 
     @PostMapping("/signin")
-    public ResponseEntity<Void> signin(@RequestBody @Valid SigninRequest request,
+    public CompletableFuture<ResponseEntity<Void>> signin(@RequestBody @Valid SigninRequest request,
                                        HttpServletRequest httpRequest,
-                                       HttpServletResponse httpResponse ) throws Exception {
+                                       HttpServletResponse httpResponse ){
 
-        authService.signin(request);
-
-        saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
-
-        return ResponseEntity.ok().build();
+        return CompletableFuture.runAsync(()->{
+            try {
+                authService.signin(request);
+                saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
+            }finally {
+                SecurityContextHolder.clearContext();
+            }
+        }, asyncExecutor).thenApply(v -> ResponseEntity.ok().build());
     }
 
 
     @PostMapping("/signout")
-    public ResponseEntity<Void> signout(HttpServletRequest httpServletRequest) throws Exception {
+    public CompletableFuture<ResponseEntity<Void>> signout(HttpServletRequest httpServletRequest) {
 
-        HttpSession session = httpServletRequest.getSession(false);
+        return CompletableFuture.runAsync(() -> {
+            try {
 
-        if (session != null) {
-            session.invalidate();
-        }
+                HttpSession session = httpServletRequest.getSession(false);
 
-        SecurityContextHolder.clearContext();
-
-        return ResponseEntity.ok().build();
+                if (session != null) {
+                    session.invalidate();
+                }
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }, asyncExecutor).thenApply(v -> ResponseEntity.ok().build());
     }
 
 
