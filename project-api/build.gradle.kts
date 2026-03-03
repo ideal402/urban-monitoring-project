@@ -16,6 +16,7 @@ dependencies {
     runtimeOnly(libs.postgresql)
     testRuntimeOnly(libs.h2)
     implementation(libs.lombok)
+    implementation(libs.caffeine)
     implementation(project(":project-interface"))
     implementation(project(":project-core"))
 }

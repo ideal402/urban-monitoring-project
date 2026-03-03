@@ -2,6 +2,7 @@ package com.ideal402.urban.domain.repository;
 
 import com.ideal402.urban.domain.entity.Region;
 import com.ideal402.urban.domain.entity.UserAlarm;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,7 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
     @Query("SELECT r.areaCode FROM Region r")
     List<String> findAllAreaCodes();
 
+    @Cacheable(value = "regionCache", key = "#areaCode")
     Optional<Region> findByAreaCode(String areaCode);
 
     List<Region> findByCategory(String category);

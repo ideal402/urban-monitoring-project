@@ -59,6 +59,7 @@ kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-p
 awaitility = { group = "org.awaitility", name = "awaitility", version.ref = "awaitility" }
 opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
