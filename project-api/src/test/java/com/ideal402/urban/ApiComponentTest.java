@@ -1,7 +1,6 @@
 //package com.ideal402.urban;
 //
 //import com.ideal402.urban.api.dto.*;
-//import com.ideal402.urban.runner.SeoulApiRunner;
 //import com.ideal402.urban.service.AuthService;
 //import com.ideal402.urban.service.common.MapService;
 //import com.ideal402.urban.service.UserService;
@@ -22,7 +21,6 @@
 //import org.springframework.security.authentication.AuthenticationManager;
 //import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 //import org.springframework.security.core.Authentication;
-//import org.springframework.security.core.AuthenticationException;
 //import org.springframework.security.core.context.SecurityContext;
 //import org.springframework.security.core.context.SecurityContextHolder;
 //import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -42,6 +40,7 @@
 //                "spring.data.redis.repositories.enabled=false"
 //        }
 //)
+//
 //@Import(ApiComponentTest.FakeAppConfig.class)
 //@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 //public class ApiComponentTest {
@@ -54,17 +53,6 @@
 //
 //    @TestConfiguration
 //    static class FakeAppConfig {
-//
-//        @Bean("seoulApiRunner")
-//        @Primary
-//        public SeoulApiRunner testSeoulApiRunner() {
-//            return new SeoulApiRunner(null) {
-//                @Override
-//                public void run(String... args) {
-//                    System.out.println(">>> [TEST] 외부 데이터 수집 Runner 실행을 건너뜁니다.");
-//                }
-//            };
-//        }
 //
 //        @Bean
 //        @Primary
