@@ -3,6 +3,7 @@ package com.ideal402.urban.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.concurrent.DelegatingSecurityContextExecutor;
 
 import java.util.concurrent.Executor;
 
@@ -20,6 +21,6 @@ public class ThreadPoolConfig {
         executor.setAwaitTerminationSeconds(30);
         executor.initialize();
 
-        return executor;
+        return new DelegatingSecurityContextExecutor(executor);
     }
 }
