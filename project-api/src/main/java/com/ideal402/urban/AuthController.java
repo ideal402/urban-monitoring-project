@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -24,8 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,103 +30,72 @@ import java.util.concurrent.Executor;
 public class AuthController{
 
     private final AuthService authService;
-    private final Executor asyncExecutor;
 
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @GetMapping("/status")
-    public CompletableFuture<ResponseEntity<String>> status() throws Exception {
+    public ResponseEntity<String> status() throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        SecurityContext context = SecurityContextHolder.getContext();
+        if (authentication == null ||
+                authentication instanceof AnonymousAuthenticationToken ||
+                !authentication.isAuthenticated()) {
 
-        return CompletableFuture.supplyAsync(() -> {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
 
-            SecurityContextHolder.setContext(context);
-
-            try {
-                return SecurityContextHolder.getContext().getAuthentication();
-            } finally {
-                SecurityContextHolder.clearContext();
-            }
-
-        }, asyncExecutor)
-
-        .thenApply(authentication -> {
-            if (authentication == null ||
-                    authentication instanceof AnonymousAuthenticationToken ||
-                    !authentication.isAuthenticated()) {
-
-                return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
-            }
-
-            return new ResponseEntity<>("OK", HttpStatus.OK);
-        });
-
+        return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
     @GetMapping("/check-email")
-    public CompletableFuture<ResponseEntity<String>> checkEmail(@RequestParam("email") String email){
-        return CompletableFuture.runAsync(()->{
-            authService.checkEmail(email);
-        }, asyncExecutor)
-        .thenApply(     v ->{
-            return new ResponseEntity<>("OK", HttpStatus.OK);
-        });
+    public ResponseEntity<String> checkEmail(@RequestParam("email") String email) throws Exception {
+
+        authService.checkEmail(email);
+
+        return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
-
     @PostMapping("/signup")
-    public CompletableFuture<ResponseEntity<Void>> signup(@RequestBody @Valid SignupRequest request,
+    public ResponseEntity<Void> signup(@RequestBody @Valid SignupRequest request,
                                        HttpServletRequest httpRequest,
-                                       HttpServletResponse httpResponse ){
+                                       HttpServletResponse httpResponse ) throws Exception {
 
-        return CompletableFuture.runAsync(()->{
-            try{
-                authService.signup(request);
+        authService.signup(request);
 
-                SigninRequest signinRequest = new SigninRequest(request.getEmail(), request.getPassword());
-                authService.signin(signinRequest);
+        SigninRequest signinRequest = new SigninRequest(request.getEmail(), request.getPassword());
+        authService.signin(signinRequest);
 
-                saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
-            } finally {
-                SecurityContextHolder.clearContext();
-            }
-        }, asyncExecutor)
-        .thenApply(v -> ResponseEntity.status(HttpStatus.CREATED).build());
+        saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
 
     @PostMapping("/signin")
-    public CompletableFuture<ResponseEntity<Void>> signin(@RequestBody @Valid SigninRequest request,
+    public ResponseEntity<Void> signin(@RequestBody @Valid SigninRequest request,
                                        HttpServletRequest httpRequest,
-                                       HttpServletResponse httpResponse ){
+                                       HttpServletResponse httpResponse ) throws Exception {
 
-        return CompletableFuture.runAsync(()->{
-            try {
-                authService.signin(request);
-                saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
-            }finally {
-                SecurityContextHolder.clearContext();
-            }
-        }, asyncExecutor).thenApply(v -> ResponseEntity.ok().build());
+        authService.signin(request);
+
+        saveAuthenticationData(request.getEmail(), httpRequest, httpResponse);
+
+        return ResponseEntity.ok().build();
     }
 
 
     @PostMapping("/signout")
-    public CompletableFuture<ResponseEntity<Void>> signout(HttpServletRequest httpServletRequest) {
+    public ResponseEntity<Void> signout(HttpServletRequest httpServletRequest) throws Exception {
 
-        return CompletableFuture.runAsync(() -> {
-            try {
+        HttpSession session = httpServletRequest.getSession(false);
 
-                HttpSession session = httpServletRequest.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
 
-                if (session != null) {
-                    session.invalidate();
-                }
-            } finally {
-                SecurityContextHolder.clearContext();
-            }
-        }, asyncExecutor).thenApply(v -> ResponseEntity.ok().build());
+        SecurityContextHolder.clearContext();
+
+        return ResponseEntity.ok().build();
     }
 
 
