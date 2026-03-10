@@ -36,3 +36,4 @@ rootProject.name = "urban-monitering"
 
 //서브 프로젝트 설정
 include("project-api", "project-core","project-external","project-interface")
+include("project-batch")

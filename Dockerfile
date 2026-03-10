@@ -34,17 +34,27 @@ RUN gradle dependencies --no-daemon || true
 
 # 2-4. 전체 소스 코드 복사 및 빌드
 COPY . .
-RUN gradle :project-api:bootJar --no-daemon -x test
+RUN gradle :project-api:bootJar :project-batch:bootJar --no-daemon -x test
 
 
 # -------------------------------------------------------------------
-# 3. Runner Stage: 실행
+# 3-1. API Runner Stage: API 서버 실행 이미지
 # -------------------------------------------------------------------
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-alpine AS api-runner
 WORKDIR /app
-
+# 빌드된 API JAR 복사
 COPY --from=builder /build/project-api/build/libs/*.jar app.jar
-
 RUN apk --no-cache add curl
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "app.jar"]
 
+
+# -------------------------------------------------------------------
+# 3-2. Batch Runner Stage: Batch 서버 실행 이미지
+# -------------------------------------------------------------------
+FROM eclipse-temurin:21-jre-alpine AS batch-runner
+WORKDIR /app
+# 빌드된 Batch JAR 복사
+COPY --from=builder /build/project-batch/build/libs/*.jar app.jar
+RUN apk --no-cache add curl
 ENTRYPOINT ["java", "-jar", "app.jar"]

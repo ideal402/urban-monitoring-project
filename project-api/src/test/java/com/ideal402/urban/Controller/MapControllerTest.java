@@ -7,7 +7,7 @@
 //import com.ideal402.urban.common.ResourceNotFoundException;
 //import com.ideal402.urban.config.SecurityConfig;
 //import com.ideal402.urban.domain.repository.UserRepository;
-//import com.ideal402.urban.service.MapService;
+//import com.ideal402.urban.service.common.MapService;
 //import com.ideal402.urban.service.dto.CustomMapInfo;
 //import org.junit.jupiter.api.DisplayName;
 //import org.junit.jupiter.api.Test;

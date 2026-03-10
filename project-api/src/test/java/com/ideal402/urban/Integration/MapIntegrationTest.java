@@ -5,7 +5,7 @@
 //import com.ideal402.urban.domain.entity.RegionStatus;
 //import com.ideal402.urban.domain.repository.RegionRepository;
 //import com.ideal402.urban.domain.repository.RegionStatusRepository;
-//import com.ideal402.urban.service.SeoulAreaService;
+//import com.ideal402.urban.service.common.SeoulAreaService;
 //import org.junit.jupiter.api.AfterEach;
 //import org.junit.jupiter.api.DisplayName;
 //import org.junit.jupiter.api.Test;
